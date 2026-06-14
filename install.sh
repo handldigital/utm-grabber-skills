@@ -23,14 +23,16 @@ TARGET_OVERRIDE=""
 REQUESTED=""
 LIST_ONLY=0
 SHOW_HELP=0
+ASSUME_YES=0
 
 for arg in "$@"; do
   case "$arg" in
-    --target=*) TARGET_OVERRIDE="${arg#*=}" ;;
-    --list)     LIST_ONLY=1 ;;
-    --help|-h)  SHOW_HELP=1 ;;
-    -*)         echo "Unknown flag: $arg" >&2; exit 2 ;;
-    *)          REQUESTED="$arg" ;;
+    --target=*)   TARGET_OVERRIDE="${arg#*=}" ;;
+    --list)       LIST_ONLY=1 ;;
+    -y|--yes|--all) ASSUME_YES=1 ;;
+    --help|-h)    SHOW_HELP=1 ;;
+    -*)           echo "Unknown flag: $arg" >&2; exit 2 ;;
+    *)            REQUESTED="$arg" ;;
   esac
 done
 
@@ -39,12 +41,15 @@ if [ "$SHOW_HELP" = "1" ]; then
 Install UTM Grabber skills into your AI coding agents.
 
 Usage:
-  install.sh <skill-name>                 Install one skill
+  install.sh <skill-name>                 Install one skill (prompts which agent)
   install.sh all                          Install every skill
   install.sh --list                       Show available skills
-  install.sh <skill-name> --target=NAME   Restrict where it installs
+  install.sh <skill-name> --target=NAME   Install only to NAME, no prompt
+  install.sh <skill-name> -y              Install to all detected, no prompt
 
-Targets: claude | cursor | codex | agents | all (default: all detected)
+Targets: claude | cursor | codex | agents
+When run interactively you are asked which agent(s) to install into.
+Piped/non-interactive runs (no terminal) install to all detected agents.
 EOF
   exit 0
 fi
@@ -103,21 +108,64 @@ else
   fi
 fi
 
+# Candidate agent targets: any agent whose config dir exists, plus the
+# shared ~/.agents/skills that Cursor and Codex also read.
+CAND_LABELS=()
+CAND_DIRS=()
+[ -d "$HOME/.claude" ] && { CAND_LABELS+=("Claude Code  (~/.claude/skills)"); CAND_DIRS+=("$HOME/.claude/skills"); }
+[ -d "$HOME/.cursor" ] && { CAND_LABELS+=("Cursor       (~/.cursor/skills)"); CAND_DIRS+=("$HOME/.cursor/skills"); }
+[ -d "$HOME/.codex" ]  && { CAND_LABELS+=("Codex        (~/.codex/skills)");  CAND_DIRS+=("$HOME/.codex/skills"); }
+CAND_LABELS+=("Shared       (~/.agents/skills)")
+CAND_DIRS+=("$HOME/.agents/skills")
+
+# Detect a usable controlling terminal. Opening /dev/tty fails when there is
+# none (e.g. CI), unlike `[ -r /dev/tty ]` which only checks permission bits.
+if (exec 3</dev/tty) 2>/dev/null; then HAS_TTY=1; else HAS_TTY=0; fi
+
 TARGETS=()
-if [ -n "$TARGET_OVERRIDE" ] && [ "$TARGET_OVERRIDE" != "all" ]; then
+if [ -n "$TARGET_OVERRIDE" ]; then
   case "$TARGET_OVERRIDE" in
     claude) TARGETS+=("$HOME/.claude/skills") ;;
     cursor) TARGETS+=("$HOME/.cursor/skills") ;;
     codex)  TARGETS+=("$HOME/.codex/skills") ;;
     agents) TARGETS+=("$HOME/.agents/skills") ;;
+    all)    TARGETS=("${CAND_DIRS[@]}") ;;
     *) echo "Unknown target: $TARGET_OVERRIDE" >&2; exit 2 ;;
   esac
+elif [ "$ASSUME_YES" = "1" ] || [ "$HAS_TTY" = "0" ]; then
+  # Non-interactive (piped, no terminal) or -y/--all: install everywhere.
+  TARGETS=("${CAND_DIRS[@]}")
 else
-  [ -d "$HOME/.claude" ] && TARGETS+=("$HOME/.claude/skills")
-  [ -d "$HOME/.cursor" ] && TARGETS+=("$HOME/.cursor/skills")
-  [ -d "$HOME/.codex" ]  && TARGETS+=("$HOME/.codex/skills")
-  # Universal fallback read by Cursor and Codex (and other open-standard tools).
-  TARGETS+=("$HOME/.agents/skills")
+  # Interactive single-choice menu. Read from /dev/tty so the prompt works
+  # even when the script itself is piped in via `curl ... | bash`.
+  MENU=("All detected (recommended)")
+  for l in "${CAND_LABELS[@]}"; do MENU+=("$l"); done
+
+  echo "Where should '$REQUESTED' be installed?" > /dev/tty
+  PS3="Choose a number [1]: "
+  select opt in "${MENU[@]}"; do
+    # Empty input (just Enter) -> default to option 1 (All).
+    [ -z "${REPLY:-}" ] && REPLY=1
+    case "$REPLY" in
+      1) TARGETS=("${CAND_DIRS[@]}"); break ;;
+      ''|*[!0-9]*) echo "Enter a number from the list." > /dev/tty ;;
+      *)
+        idx=$((REPLY - 2))   # MENU[0] is "All"; candidates start at MENU[1]
+        if [ "$idx" -ge 0 ] && [ -n "${CAND_DIRS[$idx]:-}" ]; then
+          TARGETS=("${CAND_DIRS[$idx]}"); break
+        else
+          echo "Invalid choice: $REPLY" > /dev/tty
+        fi
+        ;;
+    esac
+  done < /dev/tty
+fi
+
+# Safety net: never proceed with an empty target list (e.g. the menu received
+# EOF). Empty "${TARGETS[@]}" is also an unbound-variable error under `set -u`
+# in bash 3.2, so this guard doubles as protection against that.
+if [ "${#TARGETS[@]}" -eq 0 ]; then
+  TARGETS=("${CAND_DIRS[@]}")
 fi
 
 for name in "${TO_INSTALL[@]}"; do
