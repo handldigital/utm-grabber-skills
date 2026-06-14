@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Generated report artifacts (per-skill)
+skills/*/outputs/
+
+# Build artifacts (produced by CI release workflow)
+dist/
+*.skill
