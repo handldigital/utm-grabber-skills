@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  UTM Grabber Attribution Reports — Unified Template v1.0.0
+  UTM Grabber Attribution Reports — Unified Template v1.1.0
 
   This template renders ANY report in the catalog. It reads a `sections` array
   from the embedded summary JSON and generates the right HTML for each section type.
@@ -445,7 +445,7 @@ html, body { background: #FDFCFE; color: var(--b-ink); font-family: var(--font-b
 
 
 /* ============================================================
-   MOBILE / RESPONSIVE (v1.0.0)
+   MOBILE / RESPONSIVE (v1.1.0)
    ============================================================ */
 @media (max-width: 720px) {
   .report { padding: 28px 18px 56px; }
@@ -516,7 +516,7 @@ a, button { min-height: 44px; min-width: 44px; }
       "logo": { "type": "text", "value": "Sample" },
       "colors": { "primary": "#0160BF", "accent": "#2E90FA", "ink": "#0B1B34", "muted": "#64748B", "surface": "#F3F1FA" }
     },
-    "skill_version": "1.0.0",
+    "skill_version": "1.1.0",
     "generated_at": "2026-04-20T18:30:00Z"
   },
   "sections": []
@@ -546,7 +546,7 @@ a, button { min-height: 44px; min-width: 44px; }
 
   const brand = data.meta.brand_profile || {};
   const colors = brand.colors || {};
-  // HTML is light-only — gradient theme is PPTX-only per v1.0.0
+  // HTML is light-only — gradient theme is PPTX-only per v1.1.0
   const overrideTag = document.getElementById('brand-overrides');
   if (overrideTag) {
     overrideTag.textContent = `:root {
@@ -574,7 +574,7 @@ a, button { min-height: 44px; min-width: 44px; }
   const footerSource = document.getElementById('footer-source');
   footerSource.textContent = `Data source: UTM Grabber · ${data.meta.customer_domain || ''}`;
   const footerVersion = document.getElementById('footer-version');
-  const ver = data.meta.skill_version || '1.0.0';
+  const ver = data.meta.skill_version || '1.1.0';
   const genDate = data.meta.generated_at ? new Date(data.meta.generated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
   footerVersion.textContent = `Prepared by UTM Grabber · v${ver} · ${genDate}`;
 

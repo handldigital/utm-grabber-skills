@@ -6,7 +6,7 @@ Think terminal aliases, not magic. These exist so a marketer who runs the same r
 
 ## The shortcuts
 
-Each shortcut shows expected duration against a typical site (~500 leads/month). High-volume sites run proportionally slower due to chunked pulling.
+Each shortcut shows expected duration against a typical site (~500 leads/month). High-volume sites run proportionally slower because more pages have to be pulled.
 
 | Shortcut | Duration | Maps to |
 |---|---|---|

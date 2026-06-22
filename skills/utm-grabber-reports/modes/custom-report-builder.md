@@ -80,6 +80,16 @@ If the request asks for data we don't have (ad spend, CPA, ROAS in Phase 1), say
 
 The custom report filename should reflect the custom spec so the user can find it later. "custom-hubspot-campaigns-vs-q4-2026-04-18.html" is better than "custom-report-2026-04-18.html".
 
+### 6. Title pattern: italic accent on a noun, never a year or number
+
+Every slide `title` / `insight_title` / `label` wraps EXACTLY ONE word or phrase in `*asterisks*` — that becomes the italic brand-color accent. When you're building a custom title from scratch (no recipe template to copy from), the wrapped word MUST be a meaningful **noun** describing what the report is about. Never a year, date, percentage, or generic adjective.
+
+Good (noun in accent): `"Your *attribution* picture."` · `"Your *HubSpot* leads, mapped."` · `"Q1 *winners* in paid."`
+
+Bad (year/number/date in accent): `"Your *2026* attribution picture."` ✗ · `"Your *Q1* breakdown."` ✗ · `"*40%* of leads paid."` ✗
+
+The year/date goes in the **kicker** or the **meta_bits**, not the title accent. The title says WHAT the report is about; the kicker says WHEN.
+
 ## Capability boundaries
 
 The custom builder can combine these building blocks:

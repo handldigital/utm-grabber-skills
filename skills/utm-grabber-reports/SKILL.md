@@ -3,7 +3,7 @@ name: utm-grabber-reports
 description: Turn live UTM Grabber WordPress data into branded attribution reports, conversational answers, forecasts, and UTM URLs via the UTM Grabber MCP server. Use this skill whenever the user asks about attribution, UTMs, campaigns, lead sources, form submissions, marketing performance, paid vs organic, CRM sources, landing pages, keywords, ad creative, lead forecasts, budget what-ifs, a specific lead's history, side-by-side comparisons, anomalies, hygiene audits, agency rollups, or any question about where their leads came from — even if they don't say "UTM Grabber" or "report". Also trigger for weekly/monthly marketing reports, specific questions like "how many LinkedIn leads last week", generating tagged URLs for a new campaign, or setting up brand colors and logos for reports. Produces HTML, PDF, and PowerPoint decks plus inline answers, always driven by live MCP data — never guessed or fabricated numbers.
 ---
 
-# UTM Grabber Attribution Reports · v1.0.0
+# UTM Grabber Attribution Reports · v1.1.0
 
 ## Rule 0: DEMONSTRATE, NEVER META-EXPLAIN
 
@@ -31,9 +31,9 @@ Before any report, Claude must hold these in mind. Anything deeper than what's h
 
 **Voice.** No "script", "pipeline", "render", "template", "MCP", "tool call", "JSON". No numbered "here's what I'll do" process narrations. No duration promises ("about 15 seconds"). ≤3 sentences, ≤50 words before delivering a report.
 
-**Speed.** Check memory for saved `form_plugin` + `form_ids` — skip discovery if present. Check disk cache via `load_cached_superset()` before any MCP call (it also handles subset-of-cached-range hits — e.g. the report pulled 30 days; a follow-up Q&A about last week filters the cached pull, no MCP round-trip). Single `get_entries` call with `limit: 1500`, not chunked. For delta reports (monthly, weekly, forecast), issue current + prior `get_entries` **in parallel in the same tool-use response** — never sequentially. Target: 2 tool calls for cached follow-ups, 3 for fresh reports with saved data source (parallel pulls count as one turn), 6 worst case. If exceeding 6, stop and investigate.
+**Speed.** Check memory for saved `form_plugin` + `form_ids` — skip discovery if present. Check disk cache via `load_cached_superset()` before any MCP call (it also handles subset-of-cached-range hits — e.g. the report pulled 30 days; a follow-up Q&A about last week filters the cached pull, no MCP round-trip). `get_entries` is paginated (`per_page` max 100): call page 1, read `total_pages`, then fire pages `2…total_pages` in ONE parallel batch — never sequentially. For delta reports (monthly, weekly, forecast), batch current + prior windows together. Always run results through `helpers.load_entries([...])`, which concatenates pages AND normalizes the numeric-field-id format the MCP now returns. Target: 2 rounds for cached follow-ups, 3 for a single-page fresh report, 4 for a multi-page one. If a normal-volume report balloons past ~5 rounds, stop and investigate.
 
-**MCP retry.** If a `get_entries` call returns a 5xx, times out, or returns empty when entries are expected: retry once with a smaller limit (750 instead of 1500). If the second call also fails, tell the user in customer-language ("your site didn't respond just now — mind if I try again?") and wait for confirmation before a third attempt. Never loop retries silently.
+**MCP retry.** If a `get_entries` page call returns a 5xx, times out, or returns empty when entries are expected: retry that page once. If it fails again, tell the user in customer-language ("your site didn't respond just now — mind if I try again?") and wait for confirmation before a third attempt. Never loop retries silently.
 
 **Schema — closing section.** Every report's final section uses the summary-card schema:
 ```python
@@ -46,7 +46,7 @@ Before any report, Claude must hold these in mind. Anything deeper than what's h
 
 **Closing titles must be data-driven, not editorial.** Thread specific variables the recipe already computes into the title itself. "That's your month" is weak — the reader can't act on it. "Next: feed Google — it drove 29% of leads" tells them exactly what to do, backed by the actual number. Every new recipe should follow this pattern. Still exactly ONE italic accent per title, still no consulting CTAs.
 
-**Design — italic accent rule.** Every `title` / `insight_title` / `label` wraps EXACTLY ONE word or phrase in `*asterisks*` — renders as italic brand-primary. `"Your *attribution* picture."` ✓ / `"*Your* *attribution* *picture*"` ✗. Validator enforces.
+**Design — italic accent rule.** Every `title` / `insight_title` / `label` wraps EXACTLY ONE word or phrase in `*asterisks*` — renders as italic brand-primary. The wrapped word MUST be a meaningful **noun** the report is about. Years, dates, numbers, and generic adjectives are NEVER the italic accent. `"Your *attribution* picture."` ✓ / `"Your *2026* attribution picture."` ✗ (year-in-accent) / `"*Your* *attribution* *picture*"` ✗ (multiple accents). Validator enforces the count; this rule enforces the choice.
 
 **Design — two-tone cards are the house style.** Tinted top zone + white bottom + 1px border + 4px radius. Brand color appears in TYPOGRAPHY (kickers, italic accents, chart bars) — never as a top bar, left stripe, or background.
 
@@ -77,7 +77,7 @@ Read `references/rendering-pipeline.md` before ANY report. In short:
 - **Check disk cache before any MCP call.** Use `load_cached_superset()` from `helpers.py` — it covers exact matches AND the Q&A case where the requested range is a subset of something already cached. Cache TTL is 4 hours. Follow-up questions should NEVER trigger a re-pull.
 - **Issue current + prior pulls in parallel** for delta reports — put both `get_entries` calls in the same tool-use response. Saves ~1-3 seconds per report. Only pull the prior period if the report explicitly needs deltas (monthly, weekly, forecast).
 - **Skip the prior-period pull** unless the report explicitly needs period-over-period deltas (only monthly, weekly, forecast need it). All other reports get ONE MCP call, not two.
-- **Single-shot MCP pulls** (`limit: 1500`), not chunked. Only chunk if the first pull fails or truncates.
+- **Paginated MCP pulls** (`per_page: 100`): page 1, then pages `2…total_pages` in one parallel batch. Don't pull the date range in sequential weekly chunks. Feed every page file through `helpers.load_entries([...])` to concatenate + normalize.
 - **One bash script** that does compute + inject + save. Never split into multiple bash calls.
 - **NEVER promise a specific duration** to the customer. "About 15 seconds" etc. is banned — see voice-discipline.md.
 
@@ -87,7 +87,7 @@ Minimum tool calls for a cached follow-up: 2. For a fresh report with saved data
 
 > Want this as a PDF, PowerPoint deck, or the underlying leads as a CSV?
 
-If they say yes to PDF, run `python scripts/build_pdf.py` with the same summary dict — produces a branded, print-ready PDF using WeasyPrint + bundled fonts. No browser needed. See `references/output-formats.md`.
+If they say yes to PDF, run `python scripts/build_pdf.py` with the same summary dict — prints the real HTML report via headless Chromium (Playwright). Charts and fonts are bundled/inlined, so it renders offline and looks identical to the on-screen report. See `references/output-formats.md`.
 
 If they say yes to PPTX, run `python scripts/build_pptx.py` with the same summary dict — produces a 16:9 widescreen, native-editable PowerPoint deck. One slide per section, two-tone cards rendered as stacked rectangles, charts as embedded PNGs. See `references/output-formats.md`.
 
@@ -117,7 +117,7 @@ Benefits of the recipes over writing the summary dict by hand:
 Three output formats are supported, each with different rules:
 
 - **HTML** (default, always offered) — browser-rendered from `templates/report-shell.html`. **Light theme only.**
-- **PDF** — generated by `scripts/build_pdf.py` via WeasyPrint. **Light theme only.** Better for print readability.
+- **PDF** — generated by `scripts/build_pdf.py` (headless Chromium prints the real template). **Light theme only.** Better for print/share.
 - **PPTX** — generated by `scripts/build_pptx.py`. **Supports both light and gradient themes.** 16:9 widescreen, native-editable. The gradient theme (dramatic dark diagonal with brand-colored accents) is a PPTX exclusive — it looks premium on a projector but doesn't translate well to print or small screens.
 
 **Theme rules:**
@@ -274,7 +274,7 @@ Write a small Python script that computes every aggregate the report needs, and 
 
 Do NOT regenerate the HTML template. It already exists on disk at `templates/report-shell.html`. Copy it, inject your summary JSON into its `<script id="report-data">` block, save the result to `/mnt/user-data/outputs/`. See `references/rendering-pipeline.md` for the exact injection script.
 
-Optionally convert to PDF via WeasyPrint, or PPTX via the pptx skill.
+Optionally convert to PDF (headless Chromium) or PPTX (python-pptx).
 
 ### 6. Respond concisely
 
@@ -297,7 +297,7 @@ Every report inherits these rules. See `references/mcp-usage.md` for full patter
 - **No active form plugins:** Tell user to activate one (Gravity Forms, Fluent Forms, etc.).
 - **Zero entries in window:** Produce a shorter report with an honest disclaimer — "No submissions in the last 30 days. Either the form isn't live or the tagging broke."
 - **Entries below minimum threshold (< 10 for deck reports):** Switch to a 4-slide short version with explicit warning. Don't fake-render a full deck from trivial data.
-- **Context exceeded on large pull:** Narrow the window or split into chunks. Tell user what you did.
+- **Context exceeded on a large pull:** Narrow the date range or analyze a single form rather than paging through everything. Tell the user what you did.
 - **Partial MCP failure mid-report:** Render what succeeded, flag what didn't.
 
 ## The non-negotiables
@@ -328,7 +328,7 @@ When presenting lists of options, reports, or next steps in conversational messa
 
 ## Version
 
-This is v1.0.0. See `CHANGELOG.md` for release history. Every generated report's footer includes the skill version so customers know what they're running.
+This is v1.1.0. See `CHANGELOG.md` for release history. Every generated report's footer includes the skill version so customers know what they're running.
 
 ## File-reading order per request
 

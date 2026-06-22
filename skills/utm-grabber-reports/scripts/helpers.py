@@ -28,27 +28,115 @@ from datetime import datetime, timedelta
 # Loading MCP results
 # ==============================================================
 
-def load_entries_from_mcp_result(filepath):
-    """
-    The MCP's get_entries returns text with prose + a JSON array. This extracts
-    the JSON array and returns a list of entry dicts.
+def _read_mcp_text(filepath):
+    """Read a get_entries result file as text.
+
+    Claude saves the raw tool result, which may be (a) plain text — prose + a
+    field_labels JSON object + an 'Entries:' JSON array — or (b) a JSON envelope
+    like [{"type":"text","text":"..."}]. Return the inner text either way.
     """
     with open(filepath) as f:
-        raw = json.load(f)
+        content = f.read()
+    if content.lstrip()[:1] in '[{':
+        try:
+            data = json.loads(content)
+            if isinstance(data, list) and data and isinstance(data[0], dict) and 'text' in data[0]:
+                return data[0]['text']
+            if isinstance(data, dict) and 'text' in data:
+                return data['text']
+        except (json.JSONDecodeError, ValueError):
+            pass
+    return content
 
-    # MCP wraps the result in a text block
-    if isinstance(raw, list) and raw and 'text' in raw[0]:
-        text = raw[0]['text']
-    else:
-        text = raw
 
-    # Find the JSON array within the text
-    m = re.search(r'\[\s*\{', text)
+def _json_value_at(text, start):
+    """Decode the first JSON value beginning exactly at text[start], ignore trailing."""
+    try:
+        return json.JSONDecoder().raw_decode(text, start)[0]
+    except ValueError:
+        return None
+
+
+def _extract_entries_array(text):
+    """Return the entries list from one get_entries page (the array after 'Entries:')."""
+    idx = text.rfind('Entries:')
+    seg_start = idx + len('Entries:') if idx != -1 else 0
+    m = re.search(r'\[', text[seg_start:])
     if not m:
         return []
-    json_start = m.start()
-    json_text = text[json_start:]
-    return json.loads(json_text)
+    val = _json_value_at(text, seg_start + m.start())
+    return val if isinstance(val, list) else []
+
+
+def _extract_field_labels(text):
+    """Return the field_labels map {form_id: {field_key: label}} from a page, or {}."""
+    m = re.search(r'[Ff]ield labels', text)
+    if not m:
+        return {}
+    brace = text.find('{', m.end())
+    if brace == -1:
+        return {}
+    val = _json_value_at(text, brace)
+    return val if isinstance(val, dict) else {}
+
+
+def normalize_mcp_entries(entries, field_labels):
+    """Translate v3.1.20 raw entries into the named-key shape recipes expect.
+
+    The paginated MCP keys UTM/HANDL fields by numeric form-field id ("3": "Google")
+    and carries a separate field_labels map ({form_id: {"3": "utm_source (HandL)", ...}}).
+    This rewrites each entry's keys to the human label and adds the canonical
+    'Date Created' / 'Form ID' / 'Source URL' aliases the helpers read.
+
+    Safe no-op on already-named entries (demo data, pre-3.1.20 results): with no
+    field_labels and no lowercase metadata keys, entries pass through unchanged.
+    """
+    out = []
+    for e in entries:
+        fid = str(e.get('form_id', '') or '')
+        labels = field_labels.get(fid, {}) if field_labels else {}
+        ne = {}
+        for k, v in e.items():
+            ne[labels.get(k, k)] = v
+        if e.get('date_created') and 'Date Created' not in ne:
+            ne['Date Created'] = e['date_created']
+        if fid and 'Form ID' not in ne:
+            ne['Form ID'] = fid
+        if e.get('source_url') and 'Source URL' not in ne:
+            ne['Source URL'] = e['source_url']
+        out.append(ne)
+    return out
+
+
+def load_entries(filepaths, normalize=True):
+    """Load + concatenate entries from one or more get_entries page files.
+
+    Pass a single path or a list of page files (page 1, page 2, ...). field_labels
+    are taken from the first page that carries them. Returns normalized entries
+    (named keys + canonical aliases) unless normalize=False.
+    """
+    if isinstance(filepaths, str):
+        filepaths = [filepaths]
+    all_entries, field_labels = [], {}
+    for fp in filepaths:
+        text = _read_mcp_text(fp)
+        # Merge per-form label maps across ALL pages, not just the first. Different
+        # forms key the same numeric id to different fields (form 1 "13"=fbclid,
+        # form 3 "13"=utm_source), so when forms are pulled into separate files we
+        # need every form's labels present to normalize each entry correctly.
+        for form_id, mapping in _extract_field_labels(text).items():
+            field_labels.setdefault(form_id, {}).update(mapping)
+        all_entries.extend(_extract_entries_array(text))
+    return normalize_mcp_entries(all_entries, field_labels) if normalize else all_entries
+
+
+def load_entries_from_mcp_result(filepath):
+    """Back-compat single-file loader; delegates to load_entries (normalizing).
+
+    Kept because references and older flows import this name. Works on both the
+    new paginated v3.1.20 format and pre-3.1.20 named-key files.
+    """
+    return load_entries(filepath, normalize=True)
 
 
 def get_field(entry, *candidates, default=''):
@@ -548,14 +636,22 @@ def _filter_entries_by_date(entries, start_date, end_date):
     return out
 
 
-def save_cached_entries(raw_mcp_result_path, customer_domain, form_ids, start_date, end_date):
+def save_cached_entries(raw_mcp_result_paths, customer_domain, form_ids, start_date, end_date):
     """
-    Copy a fresh MCP result file to the cache directory and register the range
-    in the index so `load_cached_superset` can find it later.
+    Cache a fresh MCP pull so `load_cached_superset` can reuse it later.
+
+    Accepts a single page-file path OR a list of page files. Paginated pulls span
+    multiple files (one per page), so all pages are concatenated + normalized via
+    `load_entries` and written to ONE cache file as a JSON array of named-key
+    entries. This means a later cache hit returns the WHOLE window — not just the
+    first page, which is what a naive single-file copy would have stored.
     """
-    import shutil
+    if isinstance(raw_mcp_result_paths, str):
+        raw_mcp_result_paths = [raw_mcp_result_paths]
+    entries = load_entries(raw_mcp_result_paths)  # concatenated + normalized
     target = cache_path(customer_domain, form_ids, start_date, end_date)
-    shutil.copyfile(raw_mcp_result_path, target)
+    with open(target, 'w') as f:
+        json.dump(entries, f)
 
     index = _load_index()
     index[os.path.basename(target)] = {

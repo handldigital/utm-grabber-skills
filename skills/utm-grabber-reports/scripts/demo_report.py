@@ -23,7 +23,7 @@ Supported report types (any RECIPES key from report_recipes.py):
 Supported output formats (inferred from --out extension):
     .html → HTML template
     .pptx → PowerPoint deck
-    .pdf  → WeasyPrint PDF (always light — per v0.9.8 rule)
+    .pdf  → headless Chromium prints the HTML template (always light)
 
 Brand profile is a stock "Sample Brand" unless --brand-json points to a
 serialized profile. Theme defaults to light unless --theme=gradient.
@@ -166,8 +166,8 @@ def _write_pptx(summary, out_path):
 
 def _write_pdf(summary, out_path):
     from build_pdf import build_pdf_from_summary
-    # Note: PDF always renders light per v0.9.8 rule, even if summary brand
-    # specifies theme=gradient. build_pdf.py force-empties the body class.
+    # PDF always renders light even if the brand asks for gradient — build_pdf.py
+    # forces theme=light before printing the template via headless Chromium.
     build_pdf_from_summary(summary, out_path, validate=False)
 
 

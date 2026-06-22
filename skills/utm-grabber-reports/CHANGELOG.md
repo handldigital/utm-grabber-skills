@@ -2,6 +2,24 @@
 
 All notable changes to the UTM Grabber Attribution Reports skill.
 
+## 1.1.0 — Jun 13, 2026
+
+**Catches the skill up to UTM Grabber plugin v3.1.20 (paginated MCP, new entry format) and replaces the WeasyPrint PDF path with headless Chromium.**
+
+**Fix 1 (critical): live MCP data now actually works.**
+Plugin v3.1.20 changed the `get_entries` response. Entries are keyed by **numeric form-field id** (`"3": "Google"`) with a separate `field_labels` map, instead of by name (`"utm_source (HandL)": "google"`). The skill's helpers expect named keys — so against real v3.1.20 data, every UTM lookup returned empty. (Reports only "worked" because the driving model translated fields by hand.) Added `normalize_mcp_entries()` + a new `load_entries()` loader in `helpers.py` that reads the page file(s), applies `field_labels`, rewrites every entry to the named-key shape, and adds the canonical `Date Created` / `Form ID` / `Source URL` aliases. It's a safe no-op on already-named data (demo data, pre-3.1.20 files), so all flows route through it. `load_entries` merges the per-form label maps across every page — different forms key the same numeric id to different fields (form 1 `"13"` = `fbclid`, form 3 `"13"` = `utm_source`), so pulling multiple forms into separate files needs all forms' labels present or one form mis-maps. Verified end-to-end against both demo1 forms (form 1: 730 entries; form 3: 1519 entries, different field layout).
+
+**Fix 2: pagination.**
+v3.1.20's `get_entries` is paginated — `per_page` max 100, with a `Page X of Y (… T total)` line. The old "single `limit: 1500` pull" no longer exists (the param is ignored). `load_entries([...])` concatenates page files; docs (`mcp-usage.md`, `rendering-pipeline.md`, `SKILL.md`) now instruct: page 1 → read `total_pages` → fire pages 2…N in one parallel batch (both windows together for delta reports). Counting a form uses `per_page: 1` + the `total` line. `load_cached_superset` still serves subset ranges from cache.
+
+**Fix 3: PDF via headless Chromium, not WeasyPrint.**
+`build_pdf.py` now prints the real `templates/report-shell.html` through Playwright/Chromium instead of rebuilding a separate JS-free HTML + matplotlib-SVG charts for WeasyPrint. One rendering path: the PDF is the on-screen report, charts and all. Deleted `scripts/chart_renderer.py` and `scripts/pdf_styles.css` (~500 lines of parallel rendering logic gone). Chart.js (`assets/chart.umd.min.js`) and the bundled fonts are inlined / referenced via `file://`, so PDF generation stays fully offline — no CDN dependency at render time. This also drops the heavy WeasyPrint/cairo/pango system-lib stack, which was the install friction when running the skill outside claude.ai's hosted env (Cursor, Claude Code). Honors the template's existing `@media print` block (letter, margins, page breaks, repeating table headers). PDF stays light-theme-only; the brand theme is forced to light before printing. PPTX is unchanged (still python-pptx + matplotlib PNG charts).
+
+**Fix 4: italic-accent guardrail.**
+Titles like `"Your *2026* attribution picture."` (year in the italic accent slot) were possible when the custom-report-builder or an ad-hoc title was in play — no rule forbade it. Recipes were always correct; the gap was guidance. `SKILL.md` and `modes/custom-report-builder.md` now require the italic accent to be a meaningful **noun**, never a year/date/number (those go in the kicker).
+
+**Verified:** 108/108 regression (18 recipes × 2 themes × 3 formats) passes with the Chromium PDF path. Ingestion validated against 100 live v3.1.20 entries.
+
 ## 1.0.0 — Apr 20, 2026
 
 **First stable release.** Brand-pure defaults, Q&A-first caching, and parallel MCP pulls cut typical report time by 1–3 seconds and take most Q&A follow-ups to zero MCP calls.

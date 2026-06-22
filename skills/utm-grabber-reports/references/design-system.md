@@ -142,7 +142,7 @@ The footer line stays as `UTM Grabber · {domain}` — this is a data-integrity 
 The template is optimized for 1600×900 viewport. It also:
 
 - Scales gracefully in a desktop browser from 1280px up.
-- Renders cleanly to PDF via WeasyPrint (see the pdf skill) at 16:9 landscape A4.
+- Renders cleanly to PDF via headless Chromium (`scripts/build_pdf.py` prints this same template), letter size with print margins.
 - Is NOT designed for mobile phones. That's intentional — attribution reports are a desktop/PDF artifact. Mobile users should receive the exec summary as an email snippet, not this report.
 
 ## Accessibility

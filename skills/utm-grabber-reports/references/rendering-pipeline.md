@@ -4,33 +4,27 @@
 
 ## The non-negotiable speed target
 
-Every report must finish in **≤4 tool calls total**, not counting `present_files`. That means:
+Every report should finish in **≤4 tool-use rounds**, not counting `present_files`. That means:
 
-1. ONE MCP pull (not chunked unless forced)
-2. ONE bash/python execution that does EVERYTHING (data transform + template injection + file save)
+1. ONE logical MCP pull (page 1, then any remaining pages issued in a single parallel batch — see below)
+2. ONE bash/python execution that does EVERYTHING (load + normalize + transform + inject + save)
 3. `present_files` to surface the output
 4. Optionally ONE extra call if the customer explicitly asked for PDF/PPTX
 
-No multi-script orchestration. No compute-then-inject separation. One script. One call.
+No multi-script orchestration. No compute-then-inject separation. One script at the end.
 
-## The default MCP strategy: single pull
+## The default MCP strategy: page 1, then parallel rest
 
-For a monthly report against a normal-volume site (~500 leads/month), use:
+`get_entries` is paginated (max `per_page: 100`). You don't know how many pages a window has until page 1 returns, so:
 
-```
-get_entries(plugin, form_ids, start=-30d, end=today, limit=1500)
-```
+1. **Round 1:** call page 1 with `per_page: 100`. For a delta report (monthly/weekly/forecast), call page 1 of BOTH the current and prior windows together in the same parallel batch.
+2. Read `total_pages` from the pagination line (`Page 1 of 8 (100 per page, 730 total …)`).
+3. **Round 2 (only if `total_pages > 1`):** issue pages `2 … total_pages` in a **single parallel tool-use batch** — for both windows at once if it's a delta report. Save each page to its own file.
+4. Feed all page files to `helpers.load_entries([...])`, which concatenates + normalizes in one call.
 
-One call, done. Saves 4-5 tool rounds vs weekly chunking.
+A ~500-lead month is ~5 pages → 2 rounds. A "last week" Q&A (~100 leads) is 1 page → 1 round. An 8k-entry year is ~80 pages — rare; narrow the window or single-form it before paging that far.
 
-Only chunk if:
-- The response returns exactly `limit` entries (suggesting truncation), OR
-- The customer tells you their site is high-volume, OR
-- You've already tried once and hit context overflow
-
-For 90-day reports: `limit: 3000` in one call. For annual: chunk monthly (but annual is rare — don't optimize for it).
-
-For comparison windows (period-over-period), issue BOTH `get_entries` calls **in parallel in a single tool-use response** — not sequentially. The MCP server handles them concurrently and you save a full round-trip (~1–3 seconds per delta report). Only after both return, run the single transform script.
+Never page **sequentially** (page 1, wait, page 2, wait…). After page 1 you know the count — fire the rest at once. See `references/mcp-usage.md` for the full pagination + field-normalization contract.
 
 ## The single-script pattern
 
@@ -87,8 +81,8 @@ print(f"Done: {path}")
 HTML is the default. PDF and PPTX are generated on explicit request via dedicated builders that take the same `summary` dict — same schema, same voice, same section layout.
 
 - **HTML** → inject `summary` into `templates/report-shell.html`. Chart.js renders at view-time. Light theme only. Always offered.
-- **PDF** → `scripts/build_pdf.py` via WeasyPrint. Charts pre-rendered to SVG (no JS required). Light theme only — gradient is PPTX-exclusive.
-- **PPTX** → `scripts/build_pptx.py` via python-pptx. Charts pre-rendered to PNG. Supports both `light` and `gradient` themes.
+- **PDF** → `scripts/build_pdf.py` prints the real `report-shell.html` via headless Chromium (Playwright). Same charts as the on-screen report; Chart.js + fonts are bundled and inlined so it works offline. Light theme only — gradient is PPTX-exclusive.
+- **PPTX** → `scripts/build_pptx.py` via python-pptx. Charts pre-rendered to PNG (matplotlib). Supports both `light` and `gradient` themes.
 
 After delivering HTML, offer the alternate formats as a one-line follow-up:
 
@@ -96,13 +90,11 @@ After delivering HTML, offer the alternate formats as a one-line follow-up:
 
 Only generate PDF / PPTX / CSV when the user explicitly asks for that format (either in the original request or in reply to the follow-up). Never generate all three preemptively — it wastes a tool call and the customer didn't ask.
 
-## No chunked pulls by default
+## Page in parallel, never sequentially by date
 
-Chunked weekly pulls look safer but add 4 extra tool rounds. Customer feels the delay.
+Don't pull the window in sequential date chunks (week-by-week) — that adds round after round and the customer feels every one. Pull the whole date range at once and let pagination handle volume: page 1, then pages `2…total_pages` in a single parallel batch. Two rounds covers any normal-volume report.
 
-The `limit: 1500` single-pull handles 99% of sites. Risk of context overflow on one pull < certainty of user impatience on five pulls.
-
-If a pull DOES fail or truncate, fall back to chunking silently. Never announce it.
+If a page call fails, retry just that page once, then tell the user in plain language if it still fails. Never silent-loop.
 
 ## No repeated pulls within a session
 
@@ -217,14 +209,15 @@ Only pull the prior period if the report spec explicitly calls for period-over-p
 For any report, the minimum tool-call sequence is:
 
 1. **(conditional)** Check memory for data source. If missing, run discovery + save to memory.
-2. **(conditional)** Check cache via `load_cached_superset` for the current-period range. If hit, skip step 3.
-3. `get_entries(plugin, form_ids, start, end, limit=1500)` — save to cache after.
-4. **(delta reports only)** If prior is also a cache miss, issue the prior-period `get_entries` **in the same tool-use response as the current-period pull** so they run in parallel.
-5. ONE bash script: compute all sections + inject into template + save HTML to outputs.
+2. **(conditional)** Check cache via `load_cached_superset` for the current-period range. If hit, skip the pull.
+3. `get_entries(...)` page 1 with `per_page: 100` — for a delta report, page 1 of current + prior together in one parallel batch. Save each page to its own file.
+4. **(only if `total_pages > 1`)** Issue pages `2…total_pages` (both windows) in a single parallel batch. Save each.
+5. ONE bash script: `load_entries([page files])` (normalizes + concatenates) → compute sections → inject into template → save HTML. Save the concatenated result to cache.
 6. `present_files`.
 
-**Minimum tool calls for a cached follow-up question: 2** (bash script + present_files).
-**Minimum for a fresh report with saved data source: 3** (parallel get_entries counts as one tool-use turn + bash + present_files).
-**Worst case (cold, unknown site): 6** (discovery × 3 + parallel current+prior + bash + present).
+**Cached follow-up question: 2 rounds** (bash + present_files).
+**Fresh small report (≤100 leads/window, 1 page): 3 rounds** (page-1 pull + bash + present).
+**Fresh normal report (multi-page): 4 rounds** (page-1 batch + remaining-pages batch + bash + present).
+**Worst case (cold site): ~5 rounds** (discovery folds into the first pulls).
 
-If a report takes more than 6 tool calls, something's wrong. Stop and check — don't keep stacking calls.
+If a report balloons past ~5 rounds for a normal-volume site, something's wrong — stop and check rather than stacking page calls.

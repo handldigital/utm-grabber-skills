@@ -2,6 +2,12 @@
 
 Reference for every field the UTM Grabber MCP returns. Load this file if a field name is unfamiliar, if you're unsure how to aggregate a value, or if you need to classify traffic sources.
 
+## ⚠️ Raw entries are keyed by numeric field id — normalize first
+
+As of plugin v3.1.20 the paginated `get_entries` keys each entry by **numeric form-field id**, not by the human names below: `{ "3": "Google", "4": "cpc", "form_id": "1", "date_created": "2026-04-16 13:03:36" }`. A separate `field_labels` map in the response translates ids → names per form (`field_labels["1"]["3"] == "utm_source (HandL)"`).
+
+**Always load entries through `helpers.load_entries([page files])`.** It applies `field_labels`, so by the time you aggregate, every entry uses the named keys documented in this file (`utm_source (HandL)`, `Date Created`, `Form ID`, `Source URL`, …). The names below describe the *normalized* shape. See `references/mcp-usage.md` for the pagination + normalization contract.
+
 ## Entry-level fields
 
 Every form submission ("entry") returned by `get_entries` contains a mix of form-specific fields (what the user typed into the form) and UTM-Grabber-captured fields (attribution data captured by the plugin).
