@@ -34,9 +34,9 @@ All notable changes to the UTM Grabber Attribution Reports skill.
 - The cache works outside claude.ai. It uses `/home/claude/cache/mcp-entries` when `/home/claude` is writable and the system temp folder otherwise, so Claude Code, Codex and Cursor on a Mac no longer stop with `OSError: [Errno 45]`.
 - `scripts/dev/test_cache.py`: a two-page cache round trip plus a writable-folder check.
 
-## 1.2.0 — Sep 1, 2026
+## 1.2.0 — Sep 1, 2026 (not released on its own; included in 2.0.0)
 
-**Free-tier awareness: the locked premium follow-up + refusal handling. Forward-compatible; a no-op until the proxy ships the new fields.**
+**Free-tier awareness: the locked premium follow-up + refusal handling. Forward-compatible; it has no effect until the UTM Grabber service sends the new fields.**
 
 Free-plugin users are getting MCP access (30-day trial, then a limited free tier). This release teaches the skill to sell the upgrade inside the chat, without ever degrading the free experience.
 
@@ -49,7 +49,7 @@ Documented the five server refusal codes (`lookback_exceeded`, `quota_daily_reac
 **Naming rule.**
 Customer-facing copy says "UTM Grabber Premium", never "V3" (free users don't know what V3 means).
 
-**Dependencies (Maruf, proxy side):** `plan` in `check_site_health`, optional `upsell_hint` on data responses, and the five refusal codes with relay-ready message text. Until those ship, v1.2 behaves identically to v1.1. No recipe, template, or renderer changes; the 108/108 regression surface is untouched.
+**Requires:** the UTM Grabber service to send `plan` in `check_site_health`, an optional `upsell_hint` on data responses, and the five refusal codes with ready-to-relay messages. Until it does, the skill behaves exactly like v1.1. No recipe, template, or renderer changes; the 108/108 regression surface is untouched.
 
 ## 1.1.0 — Jun 13, 2026
 
@@ -583,7 +583,7 @@ Every spec now follows the same pattern: Triggers → Purpose → Before-you-bui
 
 ## 0.9.0 — Apr 20, 2026
 
-**Checkpoint 3: native PowerPoint export. The client-facing deck format Haktan asked for.**
+**Checkpoint 3: native PowerPoint export. The client-facing deck format.**
 
 **Added**
 - **PPTX generator** via `scripts/build_pptx.py` using python-pptx. Produces a 16:9 widescreen native PowerPoint deck from the same `summary` dict that drives HTML and PDF. One slide per section. All 10 section types supported: title-block, stat-strip, hero-number, section-header, chart, chart-insight, ranked-list, recommendations, insight-card, closing.
