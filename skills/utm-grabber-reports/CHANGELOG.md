@@ -29,6 +29,11 @@ All notable changes to the UTM Grabber Attribution Reports skill.
 
 **Kept intact:** the v1 renderer (`templates/report-shell.html`, `build_pdf.py`, `build_pptx.py`, `report_recipes.py`) for old summaries. Old brand profiles keep working (`light` maps to Classic, `gradient` to Boardroom).
 
+**Fixes before release (Oct 22, 2026).**
+- Cached follow-ups count every page again. `save_cached_entries()` takes the list of page files, concatenates and normalizes them, and caches one array (the v1.1.0 fix, missing from the v1.2 base). `mcp-usage.md` and `rendering-pipeline.md` pass all page files, and the report example saves to the cache after the build.
+- The cache works outside claude.ai. It uses `/home/claude/cache/mcp-entries` when `/home/claude` is writable and the system temp folder otherwise, so Claude Code, Codex and Cursor on a Mac no longer stop with `OSError: [Errno 45]`.
+- `scripts/dev/test_cache.py`: a two-page cache round trip plus a writable-folder check.
+
 ## 1.2.0 — Sep 1, 2026
 
 **Free-tier awareness: the locked premium follow-up + refusal handling. Forward-compatible; a no-op until the proxy ships the new fields.**

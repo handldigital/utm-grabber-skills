@@ -101,7 +101,7 @@ current = load_entries(['/home/claude/entries-current-p1.json',
 
 ### Conversation-scoped caching
 
-Within one conversation, don't pull the same window twice. Before calling `get_entries`, check the disk cache with `load_cached_superset` (in `helpers.py`) — it returns cached entries when the requested range is a *subset* of something already pulled (e.g. a monthly report covers a later "last week" question). After a fresh pull, save the concatenated result with `save_cached_entries`. Cache TTL is 4 hours.
+Within one conversation, don't pull the same window twice. Before calling `get_entries`, check the disk cache with `load_cached_superset` (in `helpers.py`) — it returns cached entries when the requested range is a *subset* of something already pulled (e.g. a monthly report covers a later "last week" question). After a fresh pull, save it with `save_cached_entries(page_files, domain, form_ids, start, end)` — pass the **list of all page files** (not just page 1); it concatenates + normalizes them into one cache entry so a later hit returns the whole window. Cache TTL is 4 hours.
 
 ## Large responses
 

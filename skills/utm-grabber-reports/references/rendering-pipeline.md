@@ -38,13 +38,19 @@ from helpers import load_entries, save_cached_entries
 from recipes_v2 import get_recipe
 from build_report import build_report
 
-current = load_entries(["/home/claude/cur-p1.json", "/home/claude/cur-p2.json"])
-prior = load_entries(["/home/claude/pri-p1.json"])
+cur_pages = ["/home/claude/cur-p1.json", "/home/claude/cur-p2.json"]
+pri_pages = ["/home/claude/pri-p1.json"]
+current = load_entries(cur_pages)
+prior = load_entries(pri_pages)
 
 summary = get_recipe("monthly")(current, prior, brand_profile=BRAND, customer_domain="acme.com",
                                 form_label="Gravity Forms")
 paths = build_report(summary, ["/mnt/user-data/outputs/monthly-2026-10-05.html"], theme=THEME)
 print(paths)
+
+# Cache every page file per window (after the build, so a cache error never costs the report)
+save_cached_entries(cur_pages, "acme.com", FORM_IDS, CUR_START, CUR_END)
+save_cached_entries(pri_pages, "acme.com", FORM_IDS, PRI_START, PRI_END)
 ```
 
 Cross-platform reports add the connector rows in the same script:
@@ -170,7 +176,7 @@ entries = load_cached_superset(customer_domain, form_ids, start_date, end_date)
 if entries is None:
     # Cache miss : call MCP, then save the result
     ... call get_entries ...
-    save_cached_entries(mcp_result_path, customer_domain, form_ids, start_date, end_date)
+    save_cached_entries(page_files, customer_domain, form_ids, start_date, end_date)  # every page file for this window, not just page 1
 ```
 
 Cache TTL is 4 hours (`CACHE_TTL_SECONDS` in `helpers.py`). A follow-up question minutes : or hours : after a report should never trigger a re-pull. UTM data isn't live-critical, so a longer TTL is safe and meaningfully reduces MCP round-trips for Q&A-heavy conversations.
@@ -191,7 +197,7 @@ For any report, the minimum tool-call sequence is:
 2. **(conditional)** Check cache via `load_cached_superset` for the current-period range. If hit, skip the pull.
 3. `get_entries(...)` page 1 with `per_page: 100` : for a delta report, page 1 of current + prior together in one parallel batch. Save each page to its own file.
 4. **(only if `total_pages > 1`)** Issue pages `2…total_pages` (both windows) in a single parallel batch. Save each.
-5. ONE bash script: `load_entries([page files])` (normalizes + concatenates) → `get_recipe(key)(...)` → `build_report(summary, path, theme)`. Save the concatenated entries to cache.
+5. ONE bash script: `load_entries([page files])` (normalizes + concatenates) → `get_recipe(key)(...)` → `build_report(summary, path, theme)`. Save each window's page files to cache with `save_cached_entries(page_files, ...)`, keeping current and prior windows separate.
 6. `present_files`.
 
 **Cached follow-up question: 2 rounds** (bash + present_files).

@@ -508,9 +508,15 @@ def format_date_range(start_date_str, end_date_str):
 
 import hashlib
 import os
+import tempfile
 import time
 
-CACHE_DIR = '/home/claude/cache/mcp-entries'
+# claude.ai's sandbox has a writable /home/claude. Elsewhere (Claude Code, Codex, Cursor
+# on a Mac or PC) it can't be created, so use the system temp folder, like demo_data's cache.
+if os.path.isdir('/home/claude') and os.access('/home/claude', os.W_OK):
+    CACHE_DIR = '/home/claude/cache/mcp-entries'
+else:
+    CACHE_DIR = os.path.join(tempfile.gettempdir(), 'utm-grabber-cache', 'mcp-entries')
 INDEX_PATH = os.path.join(CACHE_DIR, '_index.json')
 CACHE_TTL_SECONDS = 14400  # 4 hours — UTM data isn't live-critical; longer TTL cuts repeat pulls
 
@@ -637,14 +643,22 @@ def _filter_entries_by_date(entries, start_date, end_date):
     return out
 
 
-def save_cached_entries(raw_mcp_result_path, customer_domain, form_ids, start_date, end_date):
+def save_cached_entries(raw_mcp_result_paths, customer_domain, form_ids, start_date, end_date):
     """
-    Copy a fresh MCP result file to the cache directory and register the range
-    in the index so `load_cached_superset` can find it later.
+    Cache a fresh MCP pull so `load_cached_superset` can reuse it later.
+
+    Accepts a single page-file path OR a list of page files. Paginated pulls span
+    multiple files (one per page), so all pages are concatenated + normalized via
+    `load_entries` and written to ONE cache file as a JSON array of named-key
+    entries. This means a later cache hit returns the WHOLE window — not just the
+    first page, which is what a naive single-file copy would have stored.
     """
-    import shutil
+    if isinstance(raw_mcp_result_paths, str):
+        raw_mcp_result_paths = [raw_mcp_result_paths]
+    entries = load_entries(raw_mcp_result_paths)  # concatenated + normalized
     target = cache_path(customer_domain, form_ids, start_date, end_date)
-    shutil.copyfile(raw_mcp_result_path, target)
+    with open(target, 'w') as f:
+        json.dump(entries, f)
 
     index = _load_index()
     index[os.path.basename(target)] = {
