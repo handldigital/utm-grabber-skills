@@ -1,0 +1,51 @@
+/* Ledger dashboard: the densest look. One hairline KPI band, tight square
+   panels, compact tables and an action list instead of cards. */
+.rp.dash{padding-top:14px}
+.dash .d-top{border-bottom:1px solid var(--line-css);padding:6px 0 10px;margin-bottom:12px}
+.dash .d-top .logo-text{font-size:17px}
+.d-report,.d-period{font-family:var(--f-label);font-size:13px}
+.d-top .src{border-radius:var(--r-sm);font-family:var(--f-label)}
+.d-hero{padding:0 0 14px}
+.d-h1{font-size:24px;line-height:1.2;letter-spacing:-.015em;max-width:60ch}
+.d-dek{font-size:14px;margin-top:6px}
+.d-facts{font-family:var(--f-label);font-size:12px}
+
+.d-kpis{gap:0;margin-bottom:12px}
+.d-kpis .kpi{padding:12px 14px 10px}
+.d-kpis .kpi-value{--fs:26px;margin-top:4px}
+.d-kpis .delta{margin-top:3px}
+.d-kpis .kpi-spark{height:22px;margin-top:6px}
+.d-kpis .kpi-spark .spark{height:22px}
+
+.d-grid{gap:12px}
+.panel{padding:14px 16px 12px}
+.p-kicker{font-family:var(--f-label);font-size:12px}
+.p-title{font-size:15.5px;line-height:1.3}
+.p-dek{font-family:var(--f-label);font-size:12.5px}
+.panel .fig-title,.panel .tbl-title,.panel .s-table .tbl-title{font-size:13.5px;margin-bottom:8px}
+.panel .s-insight .h3{font-size:16.5px;line-height:1.35}
+.panel .s-insight .ins-body p{font-size:13.5px}
+.panel .ins{background:var(--panel2);padding:12px 14px}
+.panel .ins .h3{font-size:15px}
+.d-next{border-radius:var(--r);padding:12px 14px}
+.d-next-k{font-family:var(--f-label)}
+.d-next-t{font-size:15px}
+
+.panel .tbl{font-size:13px}
+.panel .tbl th{padding:7px 10px;font-size:11.5px}
+.panel .tbl td{padding:6px 10px}
+
+/* actions as a list, as in the document layout */
+.panel .recs{grid-template-columns:1fr;gap:0;border:0;background:transparent;border-radius:0}
+.panel .rec{border:0;border-top:1px solid var(--line-css);border-radius:0;display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:16px;padding:10px 0}
+.panel .rec:first-child{border-top:0;padding-top:2px}
+.panel .rec-top,.panel .rec-body{padding:0}
+.panel .rec .h3{font-size:14.5px}
+.panel .rec-body p{font-size:13px}
+.panel .rec-meta{margin-top:6px}
+
+@media (max-width:640px){
+  .d-h1{font-size:21px}
+  .panel .rec{grid-template-columns:1fr;gap:4px}
+}

@@ -2,7 +2,7 @@
 
 Fast-path triggers for power users. Short slash-prefixed commands that map directly to reports or modes without the skill having to interpret natural language.
 
-Think terminal aliases, not magic. These exist so a marketer who runs the same report every Monday doesn't have to type "give me my weekly attribution report" — they just type `/weekly`.
+Think terminal aliases, not magic. These exist so a marketer who runs the same report every Monday doesn't have to type "give me my weekly attribution report" : they just type `/weekly`.
 
 ## The shortcuts
 
@@ -28,6 +28,20 @@ Each shortcut shows expected duration against a typical site (~500 leads/month).
 | `/lead [email or name]` | ~8s | `reports/lead-profile-enrichment.md` |
 | `/compare [X vs Y]` | ~15s | `reports/side-by-side-comparison.md` |
 | `/rollup` | ~60-90s | `reports/agency-client-rollup.md` (many MCP calls) |
+| `/pulse` | ~8s | `reports/daily-pulse.md` |
+| `/qbr` | ~20s | `reports/quarterly-business-review.md` |
+| `/funnel` | ~20s | `reports/full-funnel.md` (uses your ad, analytics and CRM connections) |
+| `/roas` | ~20s | `reports/true-roas.md` (needs an ad account connected) |
+| `/truth` | ~15s | `reports/conversion-truth.md` (ad platform numbers vs your real leads) |
+| `/traffic` | ~15s | `reports/traffic-to-lead.md` (needs analytics connected) |
+| `/pipeline` | ~15s | `reports/pipeline-by-source.md` (needs a CRM connected) |
+| `/wasted` | ~15s | `reports/wasted-spend.md` (needs Google Ads connected) |
+| `/revenue` | ~15s | `reports/revenue-by-source.md` |
+| `/ai` | ~10s | `reports/ai-assistant-referrals.md` |
+| `/journey` | ~12s | `reports/customer-journey.md` |
+| `/timing` | ~10s | `reports/lead-timing.md` |
+| `/theme [look]` | instant | Set the default look: studio, boardroom, ledger, classic |
+| `/styles` | ~20s | Render the latest report in all four looks |
 | `/ask [question]` | ~5s | `modes/conversational-qa.md` |
 | `/build [spec]` | ~20-30s | `modes/custom-report-builder.md` |
 | `/utm [context]` | instant | `utilities/utm-template-generator.md` |
@@ -47,7 +61,7 @@ Each shortcut shows expected duration against a typical site (~500 leads/month).
 
 When acknowledging a shortcut, include the expected duration so the customer knows not to bail at the 12-second mark:
 
-> Running your monthly review — ~15 seconds, pulling 30 days of data now.
+> Running your monthly review : ~15 seconds, pulling 30 days of data now.
 
 For the Agency Client Rollup specifically (60-90 seconds), show progress every 20 seconds.
 
@@ -63,7 +77,7 @@ if message.startswith("/"):
     route_to_shortcut(command, args)
 ```
 
-If the command isn't recognized, don't fail — show the `/help` list and say "I didn't recognize that shortcut. Here's the list."
+If the command isn't recognized, don't fail : show the `/help` list and say "I didn't recognize that shortcut. Here's the list."
 
 ## Time-range modifiers
 

@@ -10,59 +10,44 @@
 
 ## Purpose
 
-Ranks all leads in the period by declared intent and context signals (ad spend bracket, CRM, timeframe, company size, source quality). Answers "which leads should sales work first?"
+Scores every lead 0 to 100 with transparent, additive points from signals that exist in the entries, then hands sales a call list. Answers "which leads should we call first, and why?"
 
-## Before you build
+## Build it
 
-1. Read `references/design-contract.md` — the two-tone house style, italic-accent rule, forbidden patterns.
-2. Read `scripts/template-schema.md` — section type reference.
-3. Read `references/rendering-pipeline.md` — MCP strategy and tool-call budgets.
+```python
+from recipes_v2 import get_recipe
+summary = get_recipe("lead-scorer")(current, brand_profile=brand, customer_domain="example.com")
+```
 
-The final deliverable renders via `templates/report-shell.html` (HTML default), with `scripts/build_pdf.py`, `scripts/build_pptx.py`, or `scripts/build_csv.py` available as alternative output formats offered after the HTML.
+Registry keys: `lead-scorer`, `lead-quality`, `score-leads`, `lead-quality-scorer`.
+Signature: `build_lead_scorer(current, prior=None, brand_profile=None, customer_name=None, customer_domain="", compare_label=None, prepared_by=None, prepared_for=None, brand_terms=None, **kwargs)`
 
-## Data needs
+- `current`: UTM Grabber entries for the period. One row per person (best-scoring submission).
+- `prior` (optional): adds the change in hot leads.
+- `brand_terms` (optional): extra brand words for the brand-search signal.
 
-- Single period: last 30 days of entries
-- Score inputs: declared monthly ad spend, CRM platform (high-value vs low), timeframe urgency, source tier (enterprise vs broad)
-- Each lead gets a score 0-100 with component breakdown
+## Scoring rules (also printed in the report)
 
-**Prior period required:** no
-
-This report uses a single-period pull only. Do NOT run a second `get_entries` call — see `references/rendering-pipeline.md` on skipping the prior-period pull for non-delta reports.
+- Paid search click (Google or Microsoft Ads) +10. Searched your name +15. Urgent or price words in the term +15.
+- Budget answer: +25 for $25,000 or more, +18 from $5,000, +10 from $1,000, +5 below that (lower end of a range).
+- Timeframe: +20 now or this week, +14 this month, +8 this quarter, +2 any other answer. A preferred-time answer like "as soon as possible" +15.
+- Named a service +10, or +15 when it is urgent (emergency, pain, broken). Phone number +5, company +5, two or more forms +15.
+- Visited a pricing, contact, booking, demo or comparison page +10. First landed on a different page than the form +5.
+- Capped at 100. Hot 50+, Warm 25 to 49, Cold under 25. Form fields are found by name (budget, spend, timeframe, service...). Signals missing from the data are listed in the notes. Device is never scored.
 
 ## Section order
 
-The report emits these sections, in this order:
+1. **title-block**: how many leads scored Hot. Subtitle: tiers and average score.
+2. **stat-strip**: leads scored (spark), hot, warm, average score.
+3. **insight-card** "Who to call first": the top lead, their reasons, source and time, the next two names, and phone vs email advice when devices are known.
+4. **section-header 01 Call list** + **ranked-list** (top 15): lead name, masked email (`j***@domain.com`), source (mono), score bar, Hot/Warm/Cold badge, top two reasons.
+5. **section-header 02 Score spread** + **chart-insight** (bar-vertical of score bands): the signal that most sets hot leads apart (share among hot vs all leads), the best source, why cold leads score low (only for questions the forms really ask).
+6. **section-header 03 Next steps** + **recommendations**: call the hot leads, nurture the warm tier, put more behind the best source, add a "how soon" question (budget only for B2B-style forms with a company field) or make a skipped one required.
+7. **notes** "How the score works".
+8. **closing**: who to call, with the score.
 
-**title-block**
-: Kicker: "Lead Quality Scorer · [date range]". Title: `"Your *top* leads to work first."` Meta: total scored, threshold, period.
-
-**hero-number**
-: Kicker "High-priority leads". Value: count of leads scoring >=70. Label: "scored in the top tier by declared spend, CRM, and urgency."
-
-**stat-strip**
-: 4 stats: leads scored, top-tier count, avg score, top source for high-tier.
-
-**ranked-list**
-: Top 10 leads with columns: rank, email (truncated), company, declared spend, CRM, score, source. Use a `mono-number` column for score.
-
-**insight-card**
-: Kicker "Pattern in your top tier". Title surfacing a common attribute (e.g., `"*Google search* drove 8 of your top 10."`)
-
-**recommendations**
-: 3 actions: work the top 10 this week, build an automation for mid-tier, score inputs to tighten (if any fields were missing).
-
-**closing**
-: Title: `"Work the *top* third first."` Body: offer CSV export for hand-off to sales.
-
+Fewer than 10 people: a short version (call list, rules, closing).
 
 ## Voice guidance
 
-Sales-ready, not analytical. Each lead is a human ready to be contacted. Privacy: truncate emails shown inline.
-
-## What never changes
-
-- Report uses the shared two-tone card language across every container.
-- Every title has at most ONE `*word*` italic accent, rendered as italic brand-primary.
-- Never invent new section types per report — stick to the 10 in `template-schema.md`.
-- After delivering the HTML, offer PDF / PPTX / CSV as a one-line follow-up (see `SKILL.md` Rule 2).
+Sales ready, not analytical. Each lead is a person to contact today. Always mask emails, never print IPs. Reasons must be readable at a glance.

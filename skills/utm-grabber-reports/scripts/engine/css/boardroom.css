@@ -1,0 +1,136 @@
+/* ==========================================================================
+   BOARDROOM: dark, cinematic, made for the big screen.
+   The memorable thing: tall condensed numerals and one soft spotlight in the
+   brand color behind the cover. Panels are quiet; the data glows.
+   ========================================================================== */
+html{background:var(--page)}
+body{background:
+  radial-gradient(1100px 520px at 12% -6%, color-mix(in srgb,var(--brand) 26%,transparent), transparent 62%),
+  radial-gradient(900px 420px at 100% 0%, color-mix(in srgb,var(--accent) 10%,transparent), transparent 60%),
+  var(--page);background-repeat:no-repeat;color:var(--ink);font-size:16.5px}
+.rp{padding-top:34px}
+.logo-text{font-family:var(--f-display);font-weight:700;font-size:21px;color:var(--ink);letter-spacing:-.01em}
+.logo-img{filter:none}
+.rp-top-meta{color:var(--ink3)}
+
+/* cover */
+.s-title{padding:44px 0 34px}
+.s-title .t-top{gap:6px 16px;margin-bottom:22px}
+.t-report{font-size:15px;color:var(--brand-ink);font-weight:600;letter-spacing:.01em}
+.t-period{font-size:15px;color:var(--ink2)}
+.s-title .h1{font-family:var(--f-display);font-weight:600;font-size:72px;line-height:.98;letter-spacing:-.03em;max-width:16ch}
+.acc{color:var(--brand-ink)}
+.s-title .dek{font-size:21px;color:var(--ink2);max-width:52ch;margin-top:22px}
+.facts{margin-top:30px}
+.fact dt{color:var(--ink3)}
+.fact dd{color:var(--ink)}
+.fact-plain dd{color:var(--ink2)}
+.src{background:color-mix(in srgb,var(--panel) 70%,transparent);border-color:var(--line-css)}
+.src-name{color:var(--ink)}
+
+/* KPIs */
+.s-kpis{gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line-css);border-radius:16px;padding:22px 22px 18px}
+.kpi-label{font-size:15px;color:var(--ink2);font-weight:500}
+.kpi-value{font-family:var(--f-numeral);font-weight:600;--fs:64px;line-height:.95;letter-spacing:-.01em;margin-top:12px}
+.kpi-lead{background:linear-gradient(180deg,color-mix(in srgb,var(--brand) 22%,var(--panel)) 0%,var(--panel) 100%);
+  border-color:color-mix(in srgb,var(--brand-ink) 35%,transparent)}
+.kpi-lead .kpi-value{color:var(--ink)}
+.delta{font-size:14px;margin-top:10px}
+.delta .vs{color:var(--ink3)}
+.kpi-spark{margin-top:16px}
+
+/* hero */
+.s-hero{background:var(--panel);border-radius:20px;padding:56px 40px}
+.hero-value{font-family:var(--f-numeral);--fs:168px;letter-spacing:-.02em;color:var(--ink)}
+.s-hero .kicker{color:var(--brand-ink);font-size:15px;font-weight:600}
+.hero-label{color:var(--ink2);font-size:19px}
+
+/* chapters */
+.chapter{margin-top:88px}
+.s-head{margin-bottom:26px;gap:8px}
+.sh-num{font-family:var(--f-numeral);font-size:15px;color:var(--ink3);letter-spacing:.04em}
+.sh-kicker{font-size:15px;color:var(--brand-ink);font-weight:600}
+.s-head .h2{font-size:42px;letter-spacing:-.025em;line-height:1.04;max-width:24ch}
+.sh-dek{color:var(--ink2);font-size:16.5px}
+
+/* panels */
+.fig,.ins,.s-funnel,.s-compare,.s-timeline,.s-score,.tbl-wrap,.rec,.co,.s-insight,.s-closing{background:var(--panel);
+  border-color:var(--line-css);border-radius:16px}
+.fig{padding:26px 26px 22px}
+.fig-title{font-size:18px;color:var(--ink)}
+.ins{background:var(--panel2)}
+.ins .kicker{color:var(--brand-ink);font-weight:600}
+.ins .h3{font-size:24px;letter-spacing:-.015em;line-height:1.2}
+.ins-body p{color:var(--ink2)}
+.caption{color:var(--ink3)}
+.ct-center{font-family:var(--f-numeral);font-weight:600;font-size:40px}
+.bl-track{background:var(--track);height:14px;border-radius:3px}
+.bl-fill{background:var(--s1);box-shadow:0 0 18px color-mix(in srgb,var(--s1) 45%,transparent)}
+.bl-row.is-dim .bl-fill{box-shadow:none}
+.bl-val{font-family:var(--f-numeral);font-size:18px;font-weight:600}
+.bl-share{font-family:var(--f-body);font-size:12.5px}
+.dl-val{font-family:var(--f-numeral);font-size:17px}
+.chart-svg path[stroke-width="2"]{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--s1) 55%,transparent))}
+
+/* tables */
+.tbl th{background:var(--panel2);color:var(--ink3);border-bottom-color:var(--line-css)}
+.tbl td{border-bottom-color:var(--line-soft);color:var(--ink)}
+.tbl td.c-number{font-family:var(--f-numeral);font-size:19px;font-weight:600}
+.tbl td.c-rank{font-family:var(--f-numeral);font-size:18px}
+.tbl td.c-source{color:var(--ink2)}
+.tbl tfoot td{background:var(--panel2);border-top-color:var(--ink3)}
+.tbl tr.is-hl td{background:color-mix(in srgb,var(--brand) 16%,var(--panel))}
+
+/* recommendations */
+.recs{counter-reset:rec}
+.rec{position:relative}
+.rec-top{padding:24px 24px 0}
+.rec-top::before{counter-increment:rec;content:counter(rec,decimal-leading-zero);display:block;font-family:var(--f-numeral);
+  font-weight:600;font-size:40px;line-height:1;color:var(--brand-ink);margin-bottom:12px;letter-spacing:-.01em}
+.rec-label{color:var(--ink3);font-weight:500}
+.rec .h3{font-size:21px}
+.rec-body p{color:var(--ink2)}
+
+/* insight */
+.s-insight{background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 18%,var(--panel)) 0%,var(--panel) 70%);
+  border-color:color-mix(in srgb,var(--brand-ink) 28%,transparent);padding:34px 36px}
+.s-insight .h3{font-size:30px;letter-spacing:-.02em;line-height:1.15}
+.s-insight .kicker{color:var(--brand-ink);font-weight:600;font-size:15px}
+.s-insight.tone-good{background:linear-gradient(135deg,var(--good-soft) 0%,var(--panel) 70%);border-color:color-mix(in srgb,var(--good) 35%,transparent)}
+.s-insight.tone-bad{background:linear-gradient(135deg,var(--bad-soft) 0%,var(--panel) 70%);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.s-insight.tone-warn{background:linear-gradient(135deg,var(--warn-soft) 0%,var(--panel) 70%);border-color:color-mix(in srgb,var(--warn) 35%,transparent)}
+
+/* callouts, funnel, compare, timeline, score */
+.co-value{font-family:var(--f-numeral);--fs:44px}
+.fn-val{font-family:var(--f-numeral);font-size:28px}
+.fn-fill{box-shadow:0 0 22px color-mix(in srgb,var(--fn-c,var(--s1)) 40%,transparent)}
+.cmp-cell b{font-family:var(--f-numeral);font-size:19px}
+.sc-value{font-family:var(--f-numeral);font-size:26px}
+.tl-dot{background:var(--panel);border-color:var(--brand-ink)}
+.tl-ev.k-conversion .tl-dot,.tl-ev.k-purchase .tl-dot{background:var(--brand-ink)}
+.tag{background:var(--panel2);border-color:var(--line-css);color:var(--ink2)}
+.pill.trend.steady,.badge.neutral,.impact.low,.effort{background:var(--panel2);color:var(--ink2)}
+
+/* closing */
+.s-closing{padding:44px 44px 40px;background:var(--panel)}
+.s-closing .kicker{color:var(--brand-ink);font-weight:600;font-size:15px}
+.cl-title{font-size:44px;letter-spacing:-.025em;line-height:1.04}
+.cl-stats div{border-top-color:var(--line-css)}
+.cl-stats dd{font-family:var(--f-numeral);--fs:40px}
+.cl-bullets li::before{background:var(--brand-ink)}
+
+.rp-foot{border-top-color:var(--line-css);color:var(--ink3)}
+.dt th{background:var(--panel)}
+
+@media (max-width:640px){
+  .s-title{padding:20px 0 14px}
+  .s-title .h1{font-size:42px}
+  .s-title .dek{font-size:17px}
+  .kpi-value{--fs:44px}
+  .hero-value{--fs:96px}
+  .s-head .h2{font-size:30px}
+  .cl-title{font-size:30px}
+  .cl-stats dd{--fs:30px}
+  .s-insight .h3{font-size:24px}
+}

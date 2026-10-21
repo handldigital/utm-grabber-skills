@@ -3,65 +3,38 @@
 ## Triggers
 
 - `/weekly`
-- `weekly summary`
-- `this week`
-- `last 7 days`
+- "weekly summary", "this week", "last 7 days", "Monday update"
 
 ## Purpose
 
-The one-pager for a Monday-morning all-hands. Answers "what happened last week, what changed, what should we do this week?" Tighter and more scannable than the monthly.
+The Monday one-pager for leadership: what happened in the last 7 days, what changed against the 7 before, and the two or three things to do this week. Tighter than the monthly; it prints on two pages.
 
-## Before you build
+## Build it
 
-1. Read `references/design-contract.md` — the two-tone house style, italic-accent rule, forbidden patterns.
-2. Read `scripts/template-schema.md` — section type reference.
-3. Read `references/rendering-pipeline.md` — MCP strategy and tool-call budgets.
+```python
+from recipes_v2 import get_recipe
+summary = get_recipe("weekly")(current, prior, brand_profile=brand, customer_domain="acme.com",
+                               form_label="Gravity Forms")
+```
 
-The final deliverable renders via `templates/report-shell.html` (HTML default), with `scripts/build_pdf.py`, `scripts/build_pptx.py`, or `scripts/build_csv.py` available as alternative output formats offered after the HTML.
+Registry keys: `weekly`, `weekly-summary`, `weekly-executive-summary`.
+Signature: `build_weekly(current, prior=None, brand_profile=None, customer_name=None, customer_domain="", form_label=None, compare_label=None, prepared_by=None, prepared_for=None, **kwargs)`
 
-## Data needs
-
-- Current period: last 7 days of entries
-- Prior period: days 8-14 prior (for deltas)
-- Aggregations: `compute_channel_mix`, `compute_source_leaderboard(top_n=5)`, `compute_daily_volume`, `compute_campaign_leaderboard(top_n=5)`
-
-**Prior period required:** yes
-
-Pull entries for the prior equivalent period (days N+1 to 2N back, where N is the current period length) via a second `get_entries` call. Compute deltas for stat-strip cards. Use `compute_percentage_point_delta` for % metrics.
+- `current`: UTM Grabber entries for the last 7 days. A longer pull (for example 30 days) also works: the recipe keeps the last 7 days and uses the 7 before as last week.
+- `prior`: the previous 7 days, pulled in the same parallel batch. A longer prior is cut to the 7 days before the week.
+- `compare_label` (optional): defaults to "last week".
 
 ## Section order
 
-The report emits these sections, in this order:
+1. **title-block**: outcome headline. A source is named only when it explains most of the move: "Leads rose 12% to 87 this week, led by *Google*." Otherwise "This week brought *87 leads*, 12% fewer than last week." Subtitle names the top source and the biggest move.
+2. **stat-strip**: leads (14-day spark), paid leads (14-day spark), fully tagged (pts), leads from the top source.
+3. **01 What changed** (callouts): biggest riser, biggest drop, a new or quiet source, untagged leads rising, busiest day. Moves under 3 leads are left out.
+4. **02 Sources**: top 5 sources as a bar list, each with last week's count, plus an insight on concentration and untagged leads.
+5. **03 This week**: 2 or 3 moves. A drop or rise needs 5+ leads and 10%+ to earn one: check a source that dropped, back a riser, tag the links behind a rise in untagged leads. A source that went quiet (3+ leads last week) or a new one (2+ leads) also earns a move. The advice fits the traffic: ads (paused ad, spent budget), AI assistants (does it still recommend you), referral and social.
+6. **closing**: "Next: check *Facebook* this week. It fell from 23 leads to 13." plus the busiest day and the top campaign. No summary numbers, so the report stays on two printed pages.
 
-**title-block**
-: Kicker: "Weekly Executive Summary · [date range]". Title: `"Your *week* in attribution."` Meta: domain, form, count, "7 days".
-
-**stat-strip**
-: 3 stats: total leads (with delta), leads per day, top channel % (with delta).
-
-**insight-card**
-: Kicker "The week". Title naming the biggest swing (positive or negative). Body: what drove it.
-
-**chart-insight**
-: Doughnut of channel mix + insight card on the mix.
-
-**ranked-list**
-: Top 5 campaigns this week with trend indicators (steady/rising/cooling/cold).
-
-**recommendations**
-: 3 actions for this week only. Keep them executable within 5 days.
-
-**closing**
-: Title: `"See *you* Monday."` Body: one-line next-week pointer.
-
+Under 10 leads this week: a short honest version that lists the leads and says why it stops.
 
 ## Voice guidance
 
-Monday-morning brisk. Lead with the biggest change. Recommendations must be executable this week, not strategic.
-
-## What never changes
-
-- Report uses the shared two-tone card language across every container.
-- Every title has at most ONE `*word*` italic accent, rendered as italic brand-primary.
-- Never invent new section types per report — stick to the 10 in `template-schema.md`.
-- After delivering the HTML, offer PDF / PPTX / CSV as a one-line follow-up (see `SKILL.md` Rule 2).
+Monday-morning brisk. Lead with the biggest change, not a recap. Every move is doable this week and names the source and the numbers behind it. Say "flat" when nothing moved; never invent drama.

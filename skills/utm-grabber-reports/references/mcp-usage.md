@@ -101,7 +101,7 @@ current = load_entries(['/home/claude/entries-current-p1.json',
 
 ### Conversation-scoped caching
 
-Within one conversation, don't pull the same window twice. Before calling `get_entries`, check the disk cache with `load_cached_superset` (in `helpers.py`) — it returns cached entries when the requested range is a *subset* of something already pulled (e.g. a monthly report covers a later "last week" question). After a fresh pull, save it with `save_cached_entries(page_files, domain, form_ids, start, end)` — pass the **list of all page files** (not just page 1); it concatenates + normalizes them into one cache entry so a later hit returns the whole window. Cache TTL is 4 hours.
+Within one conversation, don't pull the same window twice. Before calling `get_entries`, check the disk cache with `load_cached_superset` (in `helpers.py`) — it returns cached entries when the requested range is a *subset* of something already pulled (e.g. a monthly report covers a later "last week" question). After a fresh pull, save the concatenated result with `save_cached_entries`. Cache TTL is 4 hours.
 
 ## Large responses
 
@@ -135,6 +135,27 @@ If you're pulling a large number of entries, keep the aggregation script separat
 3. Pass only the summary into the rendering step.
 
 Never attempt to fill the HTML template by looping over 1000 raw entries in conversation. The summary object should be <1000 tokens even for a huge site.
+
+## Free-tier fields and refusals (v1.2, forward-compatible)
+
+Free-plugin sites connect through the same MCP with server-side limits. Two OPTIONAL response fields may appear (rolling out server-side; treat as absent until present):
+
+- `plan`: `"free"` or `"premium"` (may appear in `check_site_health`).
+- `upsell_hint`: one customer-ready sentence naming what premium data would add, plus an upgrade link.
+
+When either says free: enable the locked premium follow-up (see interactive-buttons.md). When absent: behave exactly as before. Never guess a site's plan.
+
+Free-tier refusals you may receive instead of data (the server's message text is written to be relayed to the customer as-is, link included):
+
+| Code | Meaning | What to do besides relaying |
+|---|---|---|
+| `lookback_exceeded` | Range is beyond the free 30-day window | Offer to re-run for the last 30 days |
+| `quota_daily_reached` | Daily allowance used | Say when it resets; offer to finish from cache |
+| `quota_monthly_reached` | Monthly allowance used | Say when it resets; serve cached data where possible |
+| `woo_premium` | WooCommerce tools are premium | Offer form-lead reports instead |
+| `source_premium` | That form plugin is premium | Offer one of the free sources found earlier |
+
+Voice discipline still applies: never say "403", "quota object", "MCP", or any mechanics word. A partial report from cache beats no report; say plainly which part is behind the upgrade.
 
 ## What the MCP does NOT return
 

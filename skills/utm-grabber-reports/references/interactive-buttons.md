@@ -6,7 +6,7 @@ Claude has a tool called `ask_user_input_v0` that renders tappable buttons in th
 
 **USE BUTTONS when:**
 - The customer needs to pick 1 of 2–4 options (role, report type, yes/no)
-- The options are discrete and well-known to the skill (our catalog of 18 reports, our 4 user roles, brand-setup paths)
+- The options are discrete and well-known to the skill (our catalog of 30 reports, our 4 user roles, brand-setup paths)
 - The next step depends on their choice and you can't start working until they answer
 - It's a follow-up offer after a report ("what next?")
 
@@ -139,6 +139,33 @@ ask_user_input_v0({
   ]
 })
 ```
+
+### Locked premium follow-up (free-tier sites only, v1.2)
+
+When the data pull carried `plan: "free"` or an `upsell_hint` (see mcp-usage.md), append ONE locked option to the normal follow-up set, labeled with a leading 🔒 and the premium dimension the hint names:
+
+```
+ask_user_input_v0({
+  "questions": [
+    {
+      "question": "What next?",
+      "type": "single_select",
+      "options": [
+        "Run UTM hygiene audit",
+        "Deep dive on top campaign",
+        "🔒 Add Google Ads keywords",
+        "I'm done"
+      ]
+    }
+  ]
+})
+```
+
+Rules:
+- At most ONE locked option per report, never the first option, never replacing the normal follow-ups.
+- If tapped: relay the upsell hint in customer language, name the product as "UTM Grabber Premium" (never "V3"), include the upgrade link the server provided, and offer to continue with what free data can do. No hard sell, no repeating the pitch if they decline.
+- If the server sent no plan/hint fields (premium sites, older plugins): no locked option, no mention of plans. This feature is invisible unless the server asks for it.
+- Fallback without buttons: the locked option becomes the last bullet in the markdown list, same 🔒 label.
 
 ### Form selection when multiple exist
 

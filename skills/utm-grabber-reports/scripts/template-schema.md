@@ -1,5 +1,8 @@
 # Template Schema — v0.8.0
 
+> **v2 note:** this is the v1 schema, kept for the legacy renderer. Every v1 section still renders in all four v2 themes. For v2 (new fields, new section and chart types) read `references/report-schema.md`.
+
+
 Every report is a JSON object with `meta` and `sections`. The template iterates `sections` in order and renders each using its `type`.
 
 ## Top-level structure

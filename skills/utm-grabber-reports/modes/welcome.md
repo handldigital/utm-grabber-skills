@@ -38,7 +38,7 @@ Show this on first-run. Pair a short written intro with an `ask_user_input_v0` b
 
 Write this short intro:
 
-> Welcome. I turn your UTM Grabber data into branded reports, conversational answers, and ready-to-paste UTM URLs — all driven by live data from your WordPress site.
+> Welcome. I turn your UTM Grabber data into branded reports (web page, PDF or PowerPoint, in four looks), quick answers, and ready-to-paste UTM URLs, all from live data on your WordPress site. Connect your ad, analytics or CRM tools too and I'll show which ads actually brought customers.
 
 Then call `ask_user_input_v0`:
 
@@ -59,7 +59,7 @@ ask_user_input_v0({
 })
 ```
 
-Stop there. Do not continue writing — the tool's docs say the user's tap IS their next message. Wait for them.
+Stop there. Do not continue writing : the tool's docs say the user's tap IS their next message. Wait for them.
 
 ### Step 2: Role-specific response + report picker buttons
 
@@ -85,8 +85,8 @@ ask_user_input_v0({
       "type": "single_select",
       "options": [
         "Monthly performance review",
+        "Which ads brought customers (uses my ad accounts)",
         "UTM hygiene audit",
-        "Landing page performance",
         "Set up my brand first"
       ]
     }
@@ -98,7 +98,7 @@ ask_user_input_v0({
 
 Short intro text:
 
-> Good. Agency workflow is different — one brand profile per client, plus portfolio rollup reports. Want to start with setup or jump into a report?
+> Good. Agency workflow is different : one brand profile per client, plus portfolio rollup reports. Want to start with setup or jump into a report?
 
 Then call:
 
@@ -129,7 +129,7 @@ Route each choice:
 
 Short intro:
 
-> Good. Two reports you'll find most useful — one for weekly scanning, one for budget planning.
+> Good. Two reports you'll find most useful : one for weekly scanning, one for budget planning.
 
 Then:
 
@@ -141,8 +141,8 @@ ask_user_input_v0({
       "type": "single_select",
       "options": [
         "Weekly executive summary",
-        "Lead volume forecast",
-        "Monthly performance review",
+        "Full funnel: visits to revenue",
+        "Quarterly business review",
         "Ask me a quick question instead"
       ]
     }
@@ -166,7 +166,7 @@ ask_user_input_v0({
       "type": "single_select",
       "options": [
         "See a sample report (no setup needed)",
-        "Generate a branded report",
+        "See the four report looks",
         "Answer a specific question",
         "Generate UTM URLs for campaigns"
       ]
@@ -177,30 +177,42 @@ ask_user_input_v0({
 
 #### If they pick "See a sample report (no setup needed)"
 
-This is **demo mode** — generate a report using the synthetic demo dataset bundled with the skill, with no MCP required. Customer sees a full-quality report without connecting their WordPress site.
+This is **demo mode**: a full-quality report built on the bundled multi-platform demo dataset (a fictional dental clinic with leads, Google and Meta Ads spend, analytics visits and CRM deals). No site connection needed.
 
-Workflow:
-1. Use the synthetic demo entries from `scripts/demo_data.py` (imports `get_demo_current()` and `get_demo_prior()` returning 300+ realistic entries each)
-2. Build a monthly report with the stock UTM Grabber brand profile (or prompt for "Sample brand" vs. "UTM Grabber brand" — one tap)
-3. Generate HTML + offer PPTX follow-up
-4. After delivery, offer two buttons: "Connect my site to run this on real data" (routes to `/brand` then MCP discovery) or "Show me a different report type"
+```python
+import sys; sys.path.insert(0, "/mnt/skills/user/utm-grabber-reports/scripts")
+from demo_v2 import build_demo
+paths = build_demo("monthly", "/mnt/user-data/outputs/sample-monthly.html", theme="studio")
+```
 
-One-line intro before calling the builder:
+One-line intro before delivering:
 
-> Here's what a monthly review looks like, built on a realistic demo dataset. Yours will look the same but with your data.
+> Here's a monthly review built on a realistic sample business. Yours looks the same, with your data.
 
-No promises about the gradient ("shall I show it in dark mode instead?" — that's fine as a follow-up). Keep demo mode fast and single-shot.
+After delivery, offer buttons: "See it in another look", "Show the cross-platform version" (`build_demo("full-funnel", ...)`), "Connect my site to run this on real data".
+
+#### If they pick "See the four report looks"
+
+Render the same sample report in all four themes (`studio`, `boardroom`, `ledger`, `classic`) and present the four files together:
+
+```python
+from demo_v2 import build_demo
+for t in ("studio", "boardroom", "ledger", "classic"):
+    build_demo("monthly", "/mnt/user-data/outputs/sample-monthly-%s.html" % t, theme=t)
+```
+
+Then: "Which look should your reports use?" (buttons). Save the pick as the brand profile's `theme`.
 
 #### If they pick "Show me the full menu"
 
-Show the 18-report list grouped into 4 categories with interactive buttons — not a wall of text.
+Show the 30 reports grouped into 4 categories with interactive buttons, not a wall of text: Core performance (monthly, weekly, daily pulse, quarterly review, leaderboard, deep dive, paid vs organic, anomalies, forecast, compare, agency rollup), Leads and tracking (audit, lead scorer, lead profile, forms, landing pages, sources per CRM, lead timing), Paid media and revenue (ad creative, keywords, budget what-if, revenue by source, AI assistant referrals, customer journeys), Cross-platform (full funnel, which ads brought customers, platforms vs reality, traffic that never converts, close rate by first touch, wasted spend).
 
 ## What NOT to do
 
 - **Don't ask 5 onboarding questions.** One role question, then recommendations. That's it.
 - **Don't show the full 17-report catalog upfront.** Overwhelming. Three recommendations per role is enough.
 - **Don't demand brand setup before their first report.** Default UTM Grabber branding works fine for exploration. Offer `/brand setup` as a suggestion, never a requirement.
-- **Don't auto-run a report without confirmation.** The welcome message recommends — the customer runs when ready.
+- **Don't auto-run a report without confirmation.** The welcome message recommends : the customer runs when ready.
 
 ## After the first report
 
@@ -225,7 +237,7 @@ ask_user_input_v0({
 })
 ```
 
-This teaches the follow-up patterns organically without dumping all 18 reports on them.
+This teaches the follow-up patterns organically without dumping all 30 reports on them.
 
 ## Trigger detection heuristic
 
@@ -234,4 +246,4 @@ Consider this the customer's first run if ALL of these are true:
 - No prior MCP calls in the current conversation
 - The user's message is a greeting, question about capabilities, or `/welcome` / `/help`
 
-If the user asks for a specific report or action directly, skip the welcome flow and just run what they asked — don't make them sit through onboarding they didn't request.
+If the user asks for a specific report or action directly, skip the welcome flow and just run what they asked : don't make them sit through onboarding they didn't request.

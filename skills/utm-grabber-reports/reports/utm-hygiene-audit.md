@@ -1,4 +1,4 @@
-# UTM Hygiene Audit
+# Tracking Audit (UTM Hygiene)
 
 ## Triggers
 
@@ -6,69 +6,51 @@
 - `hygiene audit`
 - `utm audit`
 - `tagging audit`
+- `tracking audit`
 - `attribution leaks`
 
 ## Purpose
 
-Finds broken UTM tagging — leads arriving with click IDs but no UTM parameters (untagged ad URLs), or organic/referral traffic without tracking. Answers "where is my attribution leaking and which fixes are highest-impact?"
+Scores tracking health and names each specific leak: paid clicks that lost their tags, missing click IDs, split spellings, campaign typos, pages that drop tags. Answers "where is my attribution leaking, and what do I fix first?"
 
-## Before you build
+## Build it
 
-1. Read `references/design-contract.md` — the two-tone house style, italic-accent rule, forbidden patterns.
-2. Read `scripts/template-schema.md` — section type reference.
-3. Read `references/rendering-pipeline.md` — MCP strategy and tool-call budgets.
+```python
+from recipes_v2 import get_recipe
+summary = get_recipe("audit")(current, prior, brand_profile=brand, customer_domain="example.com")
+```
 
-The final deliverable renders via `templates/report-shell.html` (HTML default), with `scripts/build_pdf.py`, `scripts/build_pptx.py`, or `scripts/build_csv.py` available as alternative output formats offered after the HTML.
+Registry keys: `audit`, `hygiene`, `utm-audit`, `utm-hygiene-audit`, `tracking-audit`.
+Signature: `build_audit(current, prior=None, brand_profile=None, customer_name=None, customer_domain="", compare_label=None, prepared_by=None, prepared_for=None, **kwargs)`
 
-## Data needs
+- `current`: UTM Grabber entries for the period.
+- `prior` (optional): adds the score's change in points.
 
-- Single period: last 30 days of entries
-- Aggregations: `compute_hygiene_counts`, `compute_leaky_urls` (new helper to group leaks by source URL)
-- Leak types: Paid with click ID but no UTM (gclid/fbclid/msclkid), Referrer with no UTM, Direct-with-referrer-mismatch
+## The seven checks (scorecard order)
 
-**Prior period required:** no
+1. **Full UTM coverage on campaign traffic**: ads, email and social leads with source, medium and campaign (pass 90%, watch 70%). Organic, referral and direct visits are left out because they never carry a campaign, and so are sites that add only utm_source on their own (chatgpt.com, perplexity.ai).
+2. **Paid clicks that lost their UTMs**: a gclid, fbclid or msclkid with no UTMs.
+3. **Google click ID on Google Ads leads** (google with a paid medium; pass 90%, watch 60%).
+4. **Meta click ID on Meta Ads leads** (facebook or instagram with a paid medium).
+5. **One spelling per source, medium and campaign**: values that match once case and punctuation are ignored.
+6. **Campaign names that look like typos**: names one or two edits away from a campaign with more leads, counted once each with the leads they split off. Numbered series and short variants like `_us` / `_uk` are skipped.
+7. **Landing pages losing tags**: half or more of a page's leads (3 or more) arrive with no UTMs.
 
-This report uses a single-period pull only. Do NOT run a second `get_entries` call — see `references/rendering-pipeline.md` on skipping the prior-period pull for non-delta reports.
+A check with nothing to measure shows as Info and does not count toward "checks passed".
 
 ## Section order
 
-The report emits these sections, in this order:
+1. **title-block**: headline leads with the costliest leak (paid clicks with no UTMs), else the fully tagged share and how many checks need a fix. It only says every check passed when at least four checks ran. Subtitle: checks passed and what to fix first.
+2. **hero-number**: tracking health score = share of leads fully tagged, with the change in points and a weekly spark.
+3. **stat-strip**: leads audited, no UTMs at all, paid clicks untagged, checks passed.
+4. **section-header 01 The checks** + **scorecard** (the seven checks, each with its count and fix).
+5. **section-header 02 Where tags go missing** + **chart-insight** (bar-horizontal of tagging states) + **ranked-list** of pages losing tags (only when a page lost 2 or more, or any paid click) + **ranked-list** of campaign traffic missing part of its tags.
+6. **section-header 03 Fix order** + **recommendations** in fix-priority order, "This week" first, ending with "Rerun this audit after the fixes".
+7. **notes**: definitions and thresholds.
+8. **closing**: the first fix with the number behind it.
 
-**title-block**
-: Kicker: "UTM Hygiene Audit · [date range]". Title: `"Where your *attribution* is leaking."` Meta: domain, form, "X submissions audited", period.
-
-**hero-number**
-: Kicker "Your hygiene score". Value: coverage % (e.g., "58%"). Label: "of your leads arrive with a fully-tagged UTM trio. The other X leads are missing attribution data."
-
-**stat-strip**
-: 4 stats: fully tagged count, attribution leaks count, paid platforms leaking count, pages to fix count.
-
-**section-header**
-: Number "01". Kicker "Leaky URLs". Title: `"Top *pages* losing attribution."`
-
-**ranked-list**
-: Top 5 URLs by leak count with columns: rank, source URL, leak count, leak type (× Paid gclid / ↘ Referrer / etc.). Use `type: trend` for leak-type column with state coloring.
-
-**insight-card**
-: Kicker "What this means". Title naming the total leaks lost per month. Body: explains paid vs referrer leak types in plain language.
-
-**section-header**
-: Number "02". Kicker "Fix Order". Title: `"What to fix *first*."`
-
-**recommendations**
-: 4 fixes ordered by impact: check ad URL templates, tag referral links, audit Meta URL params, re-run audit after fixes. Labels like "Fix 01 · Today", "Fix 02 · This week".
-
-**closing**
-: Title: `"Fix these and you'll *recover* attribution."` Body: emphasis on running monthly.
-
+Fewer than 10 leads: a spot check (score, scorecard and a note on why it is short).
 
 ## Voice guidance
 
-Diagnostic, not alarmist. Every leak type has a specific root cause. Recommendations always name the *action*, not the problem.
-
-## What never changes
-
-- Report uses the shared two-tone card language across every container.
-- Every title has at most ONE `*word*` italic accent, rendered as italic brand-primary.
-- Never invent new section types per report — stick to the 10 in `template-schema.md`.
-- After delivering the HTML, offer PDF / PPTX / CSV as a one-line follow-up (see `SKILL.md` Rule 2).
+Diagnostic, not alarmist. Every leak has a root cause and a concrete fix (auto-tagging, tracking template, final URL, naming sheet). Recommendations name the action, not the problem.

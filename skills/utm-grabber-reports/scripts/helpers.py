@@ -154,7 +154,8 @@ def get_field(entry, *candidates, default=''):
 # Traffic source classification
 # ==============================================================
 
-PAID_MEDIUMS = {'cpc', 'ppc', 'paid', 'paid_search', 'paid_social', 'paidsocial'}
+PAID_MEDIUMS = {'cpc', 'ppc', 'paid', 'paid_search', 'paid_social', 'paidsocial', 'display', 'cpm', 'cpv',
+                'paid_video', 'paidvideo', 'paid-social', 'paid-search', 'banner', 'retargeting'}
 SOCIAL_MEDIUMS = {'social', 'organic_social'}
 EMAIL_MEDIUMS = {'email', 'newsletter', 'e-mail'}
 REFERRAL_MEDIUMS = {'referral', 'partner'}
@@ -636,22 +637,14 @@ def _filter_entries_by_date(entries, start_date, end_date):
     return out
 
 
-def save_cached_entries(raw_mcp_result_paths, customer_domain, form_ids, start_date, end_date):
+def save_cached_entries(raw_mcp_result_path, customer_domain, form_ids, start_date, end_date):
     """
-    Cache a fresh MCP pull so `load_cached_superset` can reuse it later.
-
-    Accepts a single page-file path OR a list of page files. Paginated pulls span
-    multiple files (one per page), so all pages are concatenated + normalized via
-    `load_entries` and written to ONE cache file as a JSON array of named-key
-    entries. This means a later cache hit returns the WHOLE window — not just the
-    first page, which is what a naive single-file copy would have stored.
+    Copy a fresh MCP result file to the cache directory and register the range
+    in the index so `load_cached_superset` can find it later.
     """
-    if isinstance(raw_mcp_result_paths, str):
-        raw_mcp_result_paths = [raw_mcp_result_paths]
-    entries = load_entries(raw_mcp_result_paths)  # concatenated + normalized
+    import shutil
     target = cache_path(customer_domain, form_ids, start_date, end_date)
-    with open(target, 'w') as f:
-        json.dump(entries, f)
+    shutil.copyfile(raw_mcp_result_path, target)
 
     index = _load_index()
     index[os.path.basename(target)] = {

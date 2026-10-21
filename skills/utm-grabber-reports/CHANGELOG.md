@@ -2,6 +2,50 @@
 
 All notable changes to the UTM Grabber Attribution Reports skill.
 
+## 2.0.0 (Oct 5, 2026)
+
+**A new report engine: four looks, every report, every format. Twelve new reports, six of them joining leads with ads, analytics and CRM data.**
+
+**Four themes** (`references/themes.md`). Studio (new default: bright, brand-color cover, plain-English changes), Boardroom (dark, for presenting), Ledger (dense, for analysts) and Classic (the original v1 design, preserved). Any report renders in any theme as HTML, PDF and PowerPoint. Brand colors adapt to every theme with computed contrast and a color-blind-checked chart palette.
+
+**One engine, three formats** (`scripts/build_report.py`, `scripts/engine/`).
+- HTML: a dashboard layout by default (slim header, headline and next step, KPI band, then charts, tables and insights side by side in a 12-column grid), so one screen shows the whole picture; `layout="document"` keeps the long read. Self-contained (fonts embedded, no CDN), responsive with phone-sized charts, vector SVG charts, hover details, a data table under every chart.
+- PDF: printed from a dedicated print layout; no card splits across pages; running footer with page numbers; dark themes print full-bleed.
+- PowerPoint: native and editable: native charts with editable data, native tables, real text everywhere, theme fonts embedded (exact look in PowerPoint; Google Slides maps by name; Keynote-safe layouts). Verified by opening every deck in Keynote and PowerPoint.
+
+**New section types.** Funnel (with scale breaks), flow (Sankey), heatmap, quadrant matrix, A vs B comparison, callouts, scorecard, timeline, methodology notes. New chart types: multi-series lines with forecast bands, waterfalls, diverging bars. KPIs gain sparklines, "good direction" (cost going down shows green), source labels and auto-fitting numbers. Tables gain in-cell bars, deltas, badges, sparklines and totals rows.
+
+**All 18 reports rebuilt** as v2 recipes (`scripts/recipes_v2/`) with richer, data-driven structure (sparklines, period deltas, quadrant maps, scorecards, plain-language recommendations with impact and effort).
+
+**12 new reports.** Cross-platform: full-funnel performance, which ads brought customers (true ROAS), ad platforms vs reality (over-reported conversions + click-ID readiness), traffic that never converts, close rate by first touch, wasted spend finder. UTM Grabber Premium data: leads from AI assistants, customer journeys (first touch to last touch), revenue by source (WooCommerce), daily pulse, when leads arrive, quarterly business review.
+
+**Live links** (`references/artifact-delivery.md`). In the Claude desktop app and Claude Code, any report can go out as a private claude.ai link (`.artifact.html` output plus the Artifact tool) that the customer shares from the page and Claude refreshes in place, on request or on a desktop schedule. A dedicated live dashboard (`scripts/engine/live.py`, `scripts/engine/js/live.js`) pulls fresh leads from the viewer's own UTM Grabber connection each time it opens: Today, 7, 30 or 90 days, changes, channels, sources, campaigns, newest leads and landing pages. It keeps no personal details and shows the saved snapshot to viewers without a connection.
+
+**Cross-platform data layer** (`scripts/connectors.py`, `references/connectors.md`). Normalizers for Google Ads, Meta Ads, Microsoft and LinkedIn Ads, GA4, HubSpot, Salesforce, Pipedrive and WooCommerce payloads, and explainable joins (campaign and ad tags, source/medium, email). Every cross-platform report ends with a "how we built this report" note.
+
+**Demo mode v2** (`scripts/demo_v2.py`, `scripts/demo_data_v2.py`). Two fictional sample businesses with consistent leads, ad spend, analytics visits, CRM deals and WooCommerce orders, so any of the 30 reports can be shown without a site connection.
+
+**Writing rules enforced** by `scripts/validate_v2.py`: one accent per title, no em dashes, outcome-first headlines, data-driven closings, no "undefined/NaN" leaks.
+
+**Kept intact:** the v1 renderer (`templates/report-shell.html`, `build_pdf.py`, `build_pptx.py`, `report_recipes.py`) for old summaries. Old brand profiles keep working (`light` maps to Classic, `gradient` to Boardroom).
+
+## 1.2.0 — Sep 1, 2026
+
+**Free-tier awareness: the locked premium follow-up + refusal handling. Forward-compatible; a no-op until the proxy ships the new fields.**
+
+Free-plugin users are getting MCP access (30-day trial, then a limited free tier). This release teaches the skill to sell the upgrade inside the chat, without ever degrading the free experience.
+
+**New: locked premium follow-up chip.**
+When a server response carries `plan: "free"` or an `upsell_hint` string, the post-report follow-up buttons gain exactly ONE extra option with a leading 🔒 naming the premium dimension (e.g. "🔒 Add Google Ads keywords"). Tapping it relays the hint in customer language plus the server-provided upgrade link. Guardrails: never the first option, never replaces normal follow-ups, at most once per report, invisible when the fields are absent (premium sites and older plugins see zero change). Spec in `references/interactive-buttons.md`; rule hoisted into SKILL.md "Critical rules at a glance".
+
+**New: free-tier refusal handling.**
+Documented the five server refusal codes (`lookback_exceeded`, `quota_daily_reached`, `quota_monthly_reached`, `woo_premium`, `source_premium`) in `references/mcp-usage.md` with per-code recovery guidance: relay the server's customer-ready message (link included), then offer what free CAN do (re-run inside the window, serve from cache, switch to a free source). Voice discipline unchanged: no mechanics words, partial report beats no report.
+
+**Naming rule.**
+Customer-facing copy says "UTM Grabber Premium", never "V3" (free users don't know what V3 means).
+
+**Dependencies (Maruf, proxy side):** `plan` in `check_site_health`, optional `upsell_hint` on data responses, and the five refusal codes with relay-ready message text. Until those ship, v1.2 behaves identically to v1.1. No recipe, template, or renderer changes; the 108/108 regression surface is untouched.
+
 ## 1.1.0 — Jun 13, 2026
 
 **Catches the skill up to UTM Grabber plugin v3.1.20 (paginated MCP, new entry format) and replaces the WeasyPrint PDF path with headless Chromium.**
