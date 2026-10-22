@@ -29,6 +29,7 @@ from engine.live import build_live  # noqa: E402
 from helpers import classify_traffic_source  # noqa: E402
 
 THEMES = ["studio", "boardroom", "ledger", "classic"]
+CONNECTOR = "UTM Grabber Northwind"  # not the old default: the page must use the name it was built with
 END = dt.date(2026, 9, 30)
 
 MOCK = r"""
@@ -115,7 +116,7 @@ async def run(out):
     for t in THEMES:
         for kind in ("live", "demo"):
             p = os.path.join(out, "%s-%s.html" % (kind, t))
-            build_live(snap, p, connector="UTM Grabber", form_plugin="gravity-form" if kind == "live" else None,
+            build_live(snap, p, connector=CONNECTOR, form_plugin="gravity-form" if kind == "live" else None,
                        form_ids=[1] if kind == "live" else None, theme=t, brand_profile=ds["brand"],
                        customer_domain=ds["domain"], form_label=ds["form_label"], demo=(kind == "demo"),
                        generated_at="2026-09-30T18:00:00")
@@ -126,6 +127,14 @@ async def run(out):
         results.append((name, bool(cond)))
         if not cond:
             fails.append("%s %s" % (name, detail))
+
+    # a live page needs the connector it was pulled from; there is no default name
+    try:
+        build_live(snap, os.path.join(out, "no-connector.html"), form_plugin="gravity-form", form_ids=[1])
+        raised = False
+    except ValueError:
+        raised = True
+    check("live page without a connector name raises", raised)
 
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
@@ -172,7 +181,7 @@ async def run(out):
                 check("%s %s live status" % (t, mode), "is-live" in r["statusCls"] and "updated just now" in r["status"], r["status"])
                 check("%s %s live total" % (t, mode), r["kpis"][0].replace(",", "") == str(exp_total), (r["kpis"][:1], exp_total))
                 check("%s %s live channels" % (t, mode), ch == exp_ch, (ch, exp_ch))
-                check("%s %s calls" % (t, mode), first and prior and all(c["tool"] == "get_entries" and c["server"] == "UTM Grabber" for c in calls)
+                check("%s %s calls" % (t, mode), first and prior and all(c["tool"] == "get_entries" and c["server"] == CONNECTOR for c in calls)
                       and first[0]["input"]["selected_form_plugin"] == "gravity-form" and first[0]["input"]["selected_form_ids"] == [1],
                       [c["input"] for c in calls][:3])
                 if first:
@@ -203,8 +212,8 @@ async def run(out):
                     check("%s refresh" % t, any((c.get("opts") or {}).get("cache", {}).get("refresh") for c in rr["calls"]))
                 await ctx.close()
             # failures
-            for mode, needle in (("not_connected", "Add UTM Grabber in claude.ai Settings > Connectors"),
-                                 ("reauth", "Reconnect UTM Grabber"),
+            for mode, needle in (("not_connected", "Add %s in claude.ai Settings > Connectors" % CONNECTOR),
+                                 ("reauth", "Reconnect %s" % CONNECTOR),
                                  ("tool_error", "Your free plan covers the last 30 days")):
                 ctx, pg, errs = await open_page(live, mode)
                 r = await pg.evaluate(READ)

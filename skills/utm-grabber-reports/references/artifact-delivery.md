@@ -43,17 +43,18 @@ A dedicated page that pulls leads from the viewer's own UTM Grabber connection e
 **Who sees live numbers:** people signed in to claude.ai with UTM Grabber connected, which means the site owner and their team. Everyone else, including anyone who opens a public link without signing in, sees the snapshot saved when you built the page. The page says which one they're looking at.
 
 1. Pull the last 60 days of entries for the forms the customer uses (all pages), then load them with `helpers.load_entries`. That covers the 7 and 30 day views and their comparisons before live data arrives.
-2. Note the UTM Grabber connector's display name exactly as this session lists it (for example "UTM Grabber"). Each viewer's connection is found by that name.
-3. Build the page:
+2. Use the connector you just pulled this site's data from. There is no default name: the page finds each viewer's connection by its display name, the owner's included, and a customer with several sites has one connector per site, each with its own name. Its tools are named `mcp__<connector>__get_entries`; `<connector>` is its ID (for example `claude_ai_Utmgrabber_MCP`). Your first guess at the display name is that ID without `claude_ai_` and with spaces for underscores ("Utmgrabber MCP").
+3. Build the page with that display name:
    ```python
    from engine.live import build_live
-   caps = build_live(entries, os.path.expanduser("~/UTM Grabber dashboards/live-acme.com.artifact.html"),
-                     connector="UTM Grabber", form_plugin="gravity-form", form_ids=[1, 3], window="7",
-                     theme=theme, brand_profile=brand, customer_domain="acme.com", form_label="Gravity Forms")
+   build_live(entries, os.path.expanduser("~/UTM Grabber dashboards/live-acme.com.artifact.html"),
+              connector="Utmgrabber MCP", form_plugin="gravity-form", form_ids=[1, 3], window="7",
+              theme=theme, brand_profile=brand, customer_domain="acme.com", form_label="Gravity Forms")
    ```
-   `form_plugin` and `form_ids` are the same values the report pulled.
-4. Publish the file with the Artifact tool, passing `capabilities=caps`. That lets the page call one read-only tool, `get_entries`, on the viewer's own connection. Each viewer approves it once.
-5. Tell the customer: "Here's your live dashboard. It pulls fresh numbers from your UTM Grabber connection every time you open it. People you share it with see live numbers when they're signed in to claude.ai with UTM Grabber connected. Everyone else sees today's numbers."
+   `form_plugin` and `form_ids` are the same values the report pulled. `build_live` refuses to build a live page without `connector`.
+4. Publish the file with the Artifact tool, passing the connector's **ID** as the server: `capabilities={"mcp": {"servers": [{"server": "claude_ai_Utmgrabber_MCP", "tools": ["get_entries"]}]}}`. That lets the page call one read-only tool, `get_entries`, on the viewer's own connection; each viewer approves it once. The publish result names the exact display name the ID resolved to. If it differs from the name you built with, build again with that name and publish the same file again. Never publish with a guessed display name in `capabilities`: a name that matches no connector is accepted, and the page then shows saved numbers only.
+5. Save it in memory with the connector: "UTM Grabber live dashboard for acme.com: connector "Utmgrabber MCP", gravity-form forms 1, 3: <url>". Refreshes reuse that connector name; for another site, use that site's connector.
+6. Tell the customer: "Here's your live dashboard. It pulls fresh numbers from your UTM Grabber connection every time you open it. People you share it with see live numbers when they're signed in to claude.ai with UTM Grabber connected. Everyone else sees today's numbers."
 
 The page keeps only dates and tracking fields, never names, emails or other personal details. If the site's plan refuses a window (for example more than 30 days on a free plan), the page shows the site's own message with its link. For sales demos, `build_live(..., demo=True)` makes a clearly labeled sample page that simulates the connection and calls nothing.
 
