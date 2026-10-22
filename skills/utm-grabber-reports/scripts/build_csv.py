@@ -24,6 +24,7 @@ STANDARD_COLUMNS = [
     'Date Created',
     'Email Address',
     'Work Email',
+    'Email',
     'First Name',
     'Last Name',
     'Phone Number',
@@ -46,6 +47,7 @@ STANDARD_COLUMNS = [
     'Source URL',
     'handl_landing_page (HandL)',
     'handl_original_ref (HandL)',
+    'referrer (first touch, HandL)',   # the original referrer once the field map names it
     # Lead-quality form fields (if present)
     'Monthly Ad Spend',
     'Primary Goal',

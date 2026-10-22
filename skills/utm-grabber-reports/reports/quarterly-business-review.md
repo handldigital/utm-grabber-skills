@@ -38,7 +38,7 @@ Free-plugin leads cover leads, channels and campaigns. UTM Grabber Premium adds 
 - When the two periods differ in length, changes compare per-day rates ("186 leads against 140 at Q2's daily pace") and the subtitle says so.
 - Cost per paid lead: spend divided by paid leads over the dates the ad rows cover. Spend, deals or orders that cover only part of the quarter are flagged on their tile and in the notes; partial spend also gets a scorecard line, and no delta is drawn from partial deals.
 - Sparks are weekly across the quarter. Share shift: each channel's share of leads this quarter minus last quarter, in points.
-- Wins and risks: lead flow up or down 5%+; cost per paid lead down 5%+ or up 10%+; the fastest-growing channel and campaign; a campaign down 40%+; a channel down 20%+ a day; a campaign that faded 40%+ from the quarter's first month to its last; one channel with half of all leads; 15%+ of leads untagged.
+- Wins and risks: lead flow up or down 5%+; cost per paid lead down 5%+ or up 10%+; the channel and the campaign with the biggest gain; a campaign down 40%+; a channel down 20%+ a day; a campaign that faded 40%+ from the quarter's first month to its last; one channel with half of all leads; 15%+ of leads untagged.
 
 ## Section order
 

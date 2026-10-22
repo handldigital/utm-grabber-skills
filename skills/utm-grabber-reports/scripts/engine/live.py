@@ -5,7 +5,7 @@ while it stays open. Without that connection it shows the snapshot saved here.
 
     from engine.live import build_live
     caps = build_live(entries, "/path/live-acme.com.artifact.html",
-                      connector=CONNECTOR, form_plugin="gravity-form", form_ids=[1, 3],
+                      connector=CONNECTOR_NAME, form_plugin="gravity-form", form_ids=[1, 3],
                       window="7", theme="studio", brand_profile=brand,
                       customer_domain="acme.com", form_label="Gravity Forms")
     # publish the file with the Artifact tool, passing capabilities=caps
@@ -15,10 +15,11 @@ entries: normalized UTM Grabber entries (helpers.load_entries), ideally the last
 arrives. Only dates and attribution fields go into the page: never names,
 emails, phones or IP addresses.
 
-connector: the display name of the UTM Grabber connector this site's data was
-pulled from (required for a live page; there is no default, because each site
-has its own connector and names differ per account). The Artifact tool's
-publish result states the exact display name; see references/artifact-delivery.md. form_plugin / form_ids: what the page asks for,
+connector: the UTM Grabber connector's display name, exactly as this session
+lists it (customers name it themselves, e.g. "Utmgrabber MCP"). Required for a
+live page; the page finds each viewer's connection by that name only. field_map: the site's
+field map (field_map.py), the same one the entries were loaded with; the page applies it to
+every fresh pull in the browser. form_plugin / form_ids: what the page asks for,
 the same values the report pulled. A path ending in .artifact.html gets the
 skeleton-free page for the Artifact tool; any other path gets a full page for a
 local preview (live data needs the claude.ai viewer).
@@ -81,15 +82,39 @@ def slim_entries(entries):
 def capabilities(connector):
     """The runtime capability the published page declares: one connector, one read tool."""
     if not connector:
-        raise ValueError("capabilities() needs the connector's display name")
+        raise ValueError(_NO_NAME)
     return {"mcp": {"servers": [{"server": connector, "tools": ["get_entries"]}]}}
+
+
+_NO_NAME = ("connector is required: pass the UTM Grabber connector's display name exactly as this session "
+            "lists it (references/artifact-delivery.md, step 2). Never guess \"UTM Grabber\": viewers' "
+            "connectors are matched by that exact name, and a wrong one never connects.")
+
+
+# Canonical fields the page reads from a fresh pull (live.js slim()).
+_PAGE_FIELDS = ("utm_source (HandL)", "utm_medium (HandL)", "utm_campaign (HandL)", "traffic_source (HandL)",
+                "gclid (HandL)", "fbclid (HandL)", "msclkid (HandL)", "referrer (first touch, HandL)", "Source URL")
+
+
+def _page_map(fmap):
+    """The part of the site's field map the page needs: per form, the date key and its raw keys."""
+    out = {}
+    for fid, m in (fmap or {}).items():
+        fields = {c: str(k) for c, k in (m.get("fields") or {}).items() if c in _PAGE_FIELDS}
+        if m.get("date") or fields:
+            out[str(fid)] = {"date": m.get("date"), "fields": fields}
+    return out
 
 
 def build_live(entries, path, connector=None, form_plugin=None, form_ids=None, window="7", theme=None,
                brand_profile=None, customer_name=None, customer_domain="", form_label=None, demo=False,
-               generated_at=None, snapshot_from=None, snapshot_to=None):
+               generated_at=None, snapshot_from=None, snapshot_to=None, field_map=None):
     """Write the live dashboard page and return the capabilities to publish it with
-    ({} for a demo, which simulates the connection and calls nothing)."""
+    ({} for a demo, which simulates the connection and calls nothing). A live page
+    needs `connector`, the connector's exact display name; there is no default."""
+    if not demo and form_plugin and form_ids and not connector:
+        raise ValueError(_NO_NAME)
+    connector = connector or ("UTM Grabber" if demo else "your UTM Grabber connector")
     summary = {"meta": {"brand_profile": brand_profile, "customer_name": customer_name,
                         "customer_domain": customer_domain, "generated_at": generated_at}}
     key = pick_theme(theme, summary)
@@ -100,13 +125,10 @@ def build_live(entries, path, connector=None, form_plugin=None, form_ids=None, w
     s_from = snapshot_from or (days[0] if days else _dt.date.today().isoformat())
     s_to = snapshot_to or (days[-1] if days else _dt.date.today().isoformat())
     live = bool(not demo and form_plugin and form_ids)
-    if live and not connector:
-        raise ValueError("build_live() needs connector: the display name of the UTM Grabber connector this "
-                         "site's data was pulled from (see references/artifact-delivery.md)")
-    connector = connector or "UTM Grabber"  # demo and snapshot pages only label it
     tk = th["tokens"]
     cfg = {
         "server": connector, "form_plugin": form_plugin, "form_ids": list(form_ids or []),
+        "field_map": _page_map(field_map),
         "window": window if window in dict(WINDOWS) else "7", "live": live, "demo": bool(demo),
         "theme": {"key": key, "accent": th["style"]["accent"], "chartSize": th["style"].get("chart_size", 12.5),
                   "fonts": {"chart": th["fonts"].get("chart") or th["fonts"]["label"], "numeral": th["fonts"]["numeral"]},

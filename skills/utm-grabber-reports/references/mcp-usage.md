@@ -89,7 +89,7 @@ The paginated MCP keys each entry by **numeric form-field id**, not by name:
 
 A separate `field_labels` block in the same response maps those ids to names (`field_labels["1"]["3"] == "utm_source (HandL)"`). The helpers expect **named** keys (`utm_source (HandL)`, `Date Created`, …) — so raw entries MUST be normalized first, or every UTM lookup returns empty.
 
-Don't do this by hand. `helpers.load_entries()` reads the page file(s), pulls out `field_labels`, rewrites each entry's keys to the human label, and adds the canonical `Date Created` / `Form ID` / `Source URL` aliases:
+Don't do this by hand. `helpers.load_entries()` reads the page file(s), pulls out `field_labels`, flattens the nested `fields` most plugins send, and renames each field to the canonical name the reports read (`Date Created`, `utm_source (HandL)`, `utm_source (first touch, HandL)`, `Email`...) using the site's field map (next section):
 
 ```python
 from helpers import load_entries
@@ -98,6 +98,38 @@ current = load_entries(['/home/claude/entries-current-p1.json',
 ```
 
 `load_entries` is a safe no-op on already-named data (demo data, pre-3.1.20 files), so always route MCP results through it. `load_entries_from_mcp_result(path)` still exists for single-file callers and delegates to the same logic.
+
+## Map the fields first (once per site)
+
+`get_entries` returns each entry the way its form plugin stores it, so the field names differ by plugin and by site:
+
+| Form plugin | Entry shape | Date | Field labels |
+|---|---|---|---|
+| Gravity Forms | flat, keyed by numeric field id | `date_created` | yes, per form |
+| WPForms | `{date, form_id, fields: {...}}`, each answer wrapped as `{"name", "value", "id", "type"}` | `date` | yes, per form (and each answer carries its `name`) |
+| Ninja Forms, Formidable, Fluent Forms | `{date, form_id, fields: {...}}` | `date` | yes, per form |
+| OptimizePress | `{date, form_id, fields: {...}, param_keys: {...}}`; `param_keys` is the plugin's own record of which field holds each tracked parameter (`{"utm_source": "<field key>"}`) | `date` | only for inputs with placeholder text |
+| Divi | `{date, form_id: "all", fields: {...}}`, each answer wrapped as `{"value": ...}` | `date` | none: the field keys are the only names |
+| Elementor Pro, Contact Form 7, WS Form, MemberPress | `{date, form_id, fields: {...}}` (MemberPress `form_id: "all"`) | `date` | none: the field keys are the only names |
+
+`load_entries` unwraps WPForms and Divi answers and uses `param_keys` before any guessing, so those need no special handling.
+
+Labels are whatever the site owner typed. One site spelled the original referrer four ways across its forms (`handl_original_ref (HandL)`, `HandL ( handl_original_ref )`, `Handl_original_ref`, `handl_original_ref`), and the plugin sends first touch as `first_utm_source (HandL)`, not the `utm_source (first touch, HandL)` the reports read. A fixed list of names can't match every site, so map each form's fields once:
+
+1. **Draft.** Pull one page (`per_page: 20`) of each form you'll report on, then run `python3 scripts/field_map.py PAGE_FILES...`. It prints, per form, which raw field it read as each canonical field (`references/data-dictionary.md`) and lists every field it couldn't place, with its label and sample values.
+2. **Fix the gaps.** Use the labels, the keys and the samples: a `Cj0KCQ...` or `EAIaIQ...` value is a gclid, a full URL is a landing page or referrer, `paid` / `organic` / `direct` is a traffic source, an address with `@` is the email. First-touch fields hold the visitor's first visit (often "first", "original" or "initial" in the name). Leave a field out rather than guess.
+3. **Confirm with the customer** in one short message, in plain words: "Here's how I'll read your form: date from Date, source from UTM Source, first-visit source from First UTM Source, email from Your Email... Does that look right?" Never show raw JSON.
+4. **Save it** with `field_map.to_memory(fmap, domain)`: one memory line per form (`[utm-grabber-field-map] acme.com f=1 d=date_created us=3 fus=14 ...`), the same way brand profiles are saved (`references/branding-profile.md`).
+5. **Use it every time:** `fmap = field_map.from_memory(memory_lines, domain)`, then `load_entries(pages, field_map=fmap)` and `save_cached_entries(pages, ..., field_map=fmap)`.
+
+Skip the draft when memory already has a map for these form IDs. Redo it when the customer adds a form, or when a mapped field comes back empty on every entry (the form changed). Without a saved map, `load_entries` uses the automatic draft. It reads the plugin's own field names, but it can't place fields with meaningless keys, so a report could miss first touch, click IDs or the email.
+
+```python
+import field_map
+from helpers import load_entries
+fmap = field_map.from_memory(memory_lines, "acme.com")      # {} if none saved yet
+current = load_entries(["/home/claude/cur-p1.json", "/home/claude/cur-p2.json"], field_map=fmap)
+```
 
 ### Conversation-scoped caching
 

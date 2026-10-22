@@ -245,7 +245,7 @@ def build_monthly(current, prior=None, brand_profile=None, customer_name=None, c
     if rising:
         c, v, pv = rising[0]
         recs.append({"label": "This month", "title": "Put more budget behind *%s*" % pretty(c),
-                     "body": "It sent %s leads, up from %s. It is your fastest-growing campaign." % (n(v), n(pv)),
+                     "body": "It sent %s leads, up from %s: the most of any growing campaign." % (n(v), n(pv)),
                      "impact": "High", "effort": "Medium"})
     falling = [(c, v, camps_prior.get(c, 0)) for c, v in camps_prior.most_common(10)
                if camps.get(c, 0) < v * 0.6 and v >= 5]

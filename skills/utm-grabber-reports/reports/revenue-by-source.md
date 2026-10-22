@@ -54,7 +54,7 @@ Signature: `build_revenue(orders, prior_orders=None, ad_rows=None, leads=None, d
 6. **section-header 03 First vs last touch** + **comparison** (top 6 channels) when 10+ orders carry first touch.
 7. **section-header 04 Day by day** + **chart** (line-multi, prior period dashed).
 8. **section-header 05 Products** + **ranked-list** (top 6 channels) when most orders list products.
-9. **section-header Next steps** + **recommendations**: scale the fastest-growing campaign, find out why a campaign slowed, credit the channel that finds buyers, tag untagged orders (15%+ of revenue), look into refunds (4%+ of orders), hold spend to the ROAS floor.
+9. **section-header Next steps** + **recommendations**: scale the campaign whose revenue rose the most (up 20%+), find out why a campaign slowed, credit the channel that finds buyers, tag untagged orders (15%+ of revenue), look into refunds (4%+ of orders), hold spend to the ROAS floor.
 10. **notes** and **closing** (next step with the number behind it).
 
 Short versions: no orders and no won deals (how to connect a store or CRM); fewer than 10 sales (every sale listed with its channel).

@@ -2719,7 +2719,7 @@ def build_qbr(current, prior=None, ad_rows=None, ad_rows_prior=None, deal_rows=N
                      "detail": "Down from %s per paid lead in %s." % (money(cpl_p), cmp_)})
     if grow:
         gname, a, b, gg = grow[0]
-        wins.append({"label": "%s grew fastest" % gname, "value": _sp(gg), "status": "pass",
+        wins.append({"label": "%s grew the most" % gname, "value": _sp(gg), "status": "pass",
                      "detail": "%s leads a day, up from %s." % (_day_rate(a), _day_rate(b))})
     rising_c = sorted([(c, v, camps_p.get(c, 0) * scale) for c, v in camps.most_common(15)
                        if has_prior and camps_p.get(c, 0) and v >= 1.25 * camps_p[c] * scale

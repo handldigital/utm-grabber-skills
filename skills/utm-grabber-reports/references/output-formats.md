@@ -29,6 +29,14 @@ build_report(summary, ["/mnt/user-data/outputs/monthly-2026-10-05.pdf",
 
 Offer after HTML: "Want this as a PDF to send to your team?"
 
+### When the PDF can't be made
+
+Some apps sandbox the commands you run. Codex on macOS blocks headless Chromium (`bootstrap_check_in ... Permission denied (1100)`), and some machines don't have Playwright. Then `build_report` raises `PdfUnavailable` (its message starts `PDF_UNAVAILABLE`) after building every other format you asked for.
+
+- Say it in one plain sentence: "I couldn't make the PDF in this app, but the web page and the PowerPoint are ready."
+- Offer the alternatives: they can open the web page and save it as a PDF from their browser's print menu, use the PowerPoint, or let this step run outside the app's sandbox (in Codex, approve running it with full access) so you can try again.
+- Never build a PDF any other way (another library, a screenshot, a different layout), and never say a PDF was made when it wasn't.
+
 ## PowerPoint (PPTX)
 
 - Built by `engine/pptx_render.py`: native, editable 16:9 deck.

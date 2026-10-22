@@ -29,6 +29,9 @@ from engine.live import build_live  # noqa: E402
 from helpers import classify_traffic_source  # noqa: E402
 
 THEMES = ["studio", "boardroom", "ledger", "classic"]
+FMAP = {"1": {"date": "date", "fields": {"utm_source (HandL)": "u1", "utm_medium (HandL)": "u2", "utm_campaign (HandL)": "u3",
+                                        "traffic_source (HandL)": "u4", "gclid (HandL)": "u5", "fbclid (HandL)": "u6",
+                                        "msclkid (HandL)": "u7", "referrer (first touch, HandL)": "u8", "Source URL": "u9"}}}
 CONNECTOR = "UTM Grabber Northwind"  # not the old default: the page must use the name it was built with
 END = dt.date(2026, 9, 30)
 
@@ -53,10 +56,32 @@ window.__serve = function (server, tool, input, opts) {
             "8": e.f ? "IwAR" : "", "9": e.k ? "ms1" : "", "10": e.rf ? "https://ref.example/" : "", source_url: "https://site.example" + e.u,
             "First Name": "Jane", "Work Email": "jane@example.com"};
   });
+  function wp(id, name, v) { return {name: name, value: v, id: id, type: "hidden"}; }
+  if (mode === "nested") rows = rows.map(function (r) {   // WPForms: {date, form_id, fields}, each answer wrapped, owner-typed labels
+    return {date: r.date_created, form_id: "1", fields: {"u1": wp(1, "UTM Source", r["3"]), "u2": wp(2, "Medium", r["4"]),
+            "u3": wp(3, "Campaign name", r["5"]), "u4": wp(4, "Traffic", r["6"]), "u5": wp(5, "Google click", r["7"]),
+            "u6": wp(6, "FB click", r["8"]), "u7": wp(7, "Bing click", r["9"]), "u8": wp(8, "Original referrer", r["10"]),
+            "u9": wp(9, "Page URL", r.source_url), "u10": wp(10, "Name", "Jane"), "u11": wp(11, "Email", "jane@example.com")}};
+  });
+  if (mode === "unmapped") rows = rows.map(function (r) {   // WPForms on a form the saved map doesn't cover: labels only
+    return {date: r.date_created, form_id: "1", fields: {"w1": wp(1, "UTM Source", r["3"]), "w2": wp(2, "utm medium", r["4"]),
+            "w3": wp(3, "UTM_Campaign", r["5"]), "w4": wp(4, "Traffic Source", r["6"]), "w5": wp(5, "gclid (HandL)", r["7"]),
+            "w6": wp(6, "FBCLID", r["8"]), "w7": wp(7, "msclkid", r["9"]), "w8": wp(8, "HandL ( handl_original_ref )", r["10"]),
+            "w9": wp(9, "handl_url", r.source_url), "w10": wp(10, "Name", "Jane"), "w11": wp(11, "Email", "jane@example.com")}};
+  });
+  if (mode === "stored") rows = rows.map(function (r) {   // the plugin's submission store (OptimizePress): no labels, param_keys
+    return {date: r.date_created, form_id: "1", fields: {"x1": r["3"], "x2": r["4"], "x3": r["5"], "x4": r["6"], "x5": r["7"],
+            "x6": r["8"], "x7": r["9"], "x8": r["10"], "x9": r.source_url, "x10": "Jane", "x11": "jane@example.com"},
+            param_keys: {utm_source: "x1", utm_medium: "x2", utm_campaign: "x3", traffic_source: "x4", gclid: "x5",
+                         fbclid: "x6", msclkid: "x7", handl_original_ref: "x8", handl_url: "x9"}};
+  });
   var a = pd(input.selected_start_date), b = pd(input.selected_end_date);
-  rows = rows.filter(function (r) { var d = pd(r.date_created); return d >= a && d <= b; });
+  rows = rows.filter(function (r) { var d = pd(r.date_created || r.date); return d >= a && d <= b; });
   var per = input.per_page || 50, pages = Math.max(1, Math.ceil(rows.length / per)), page = input.page || 1;
-  var labels = {"1": {"3": "utm_source (HandL)", "4": "utm_medium (HandL)", "5": "utm_campaign (HandL)", "6": "traffic_source (HandL)",
+  var labels = mode === "stored" || mode === "unmapped" ? {} : mode === "nested" ? {"1": {"u1": "UTM Source", "u2": "Medium", "u3": "Campaign name", "u4": "Traffic",
+                                          "u5": "Google click", "u6": "FB click", "u7": "Bing click", "u8": "Original referrer",
+                                          "u9": "Page URL", "u10": "Name", "u11": "Email"}} :
+               {"1": {"3": "utm_source (HandL)", "4": "utm_medium (HandL)", "5": "utm_campaign (HandL)", "6": "traffic_source (HandL)",
                       "7": "gclid (HandL)", "8": "fbclid (HandL)", "9": "msclkid (HandL)", "10": "referrer (first touch, HandL)"}};
   var slice = rows.slice((page - 1) * per, page * per);
   if (mode === "structured") {
@@ -116,7 +141,7 @@ async def run(out):
     for t in THEMES:
         for kind in ("live", "demo"):
             p = os.path.join(out, "%s-%s.html" % (kind, t))
-            build_live(snap, p, connector=CONNECTOR, form_plugin="gravity-form" if kind == "live" else None,
+            build_live(snap, p, connector=CONNECTOR, field_map=FMAP, form_plugin="gravity-form" if kind == "live" else None,
                        form_ids=[1] if kind == "live" else None, theme=t, brand_profile=ds["brand"],
                        customer_domain=ds["domain"], form_label=ds["form_label"], demo=(kind == "demo"),
                        generated_at="2026-09-30T18:00:00")
@@ -171,7 +196,7 @@ async def run(out):
             check("%s no-capability message" % t, "signed in" in r["msg"] and "is-snap" in r["statusCls"], r["msg"])
             await ctx.close()
             # live: text pages
-            for mode in ("ok", "structured"):
+            for mode in ("ok", "structured", "nested", "unmapped", "stored"):
                 ctx, pg, errs = await open_page(live, mode)
                 r = await pg.evaluate(READ)
                 ch = {k: int(v.replace(",", "")) for k, v in r["channels"]}

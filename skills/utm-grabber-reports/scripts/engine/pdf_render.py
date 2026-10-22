@@ -19,6 +19,17 @@ from .themes import pick_theme, resolve_theme
 PAPER = {"letter": ("8.5in", "11in"), "a4": ("210mm", "297mm")}
 
 
+class PdfUnavailable(RuntimeError):
+    """Headless Chromium could not start here, so no PDF was made.
+
+    Typical cause: an app sandbox (Codex on macOS refuses Chromium with
+    "bootstrap_check_in ... Permission denied (1100)"), or Playwright/Chromium
+    missing. Don't make a PDF any other way: tell the user, and offer the web page
+    (which they can save as a PDF from their browser's print menu) or the
+    PowerPoint deck, or a retry once they let the step run outside the sandbox.
+    """
+
+
 def _page_css(theme, title, paper, modern=True):
     tk = theme["tokens"]
     w, h = PAPER.get(paper, PAPER["letter"])
@@ -54,12 +65,21 @@ def render_print_html(summary, theme=None, paper=None, modern=True):
 
 
 def build_pdf(summary, path, theme=None, paper=None):
-    """Render the summary to a PDF at path. Returns path."""
-    from playwright.sync_api import sync_playwright
+    """Render the summary to a PDF at path. Returns path. Raises PdfUnavailable when
+    Chromium can't start here."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError as e:
+        raise PdfUnavailable("PDF_UNAVAILABLE: Playwright isn't installed here (%s)." % e) from e
 
     os.makedirs(os.path.dirname(os.path.abspath(path)) or ".", exist_ok=True)
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        try:
+            browser = p.chromium.launch()
+        except Exception as e:
+            first = (str(e).strip().splitlines() or [type(e).__name__])[0][:300]
+            raise PdfUnavailable("PDF_UNAVAILABLE: headless Chromium couldn't start here, usually because "
+                                 "this app's sandbox blocks it (%s)." % first) from e
         try:
             major = int(re.match(r"(\d+)", browser.version).group(1))
         except Exception:

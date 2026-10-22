@@ -46,21 +46,29 @@ def build_report(summary, out, theme=None, paper=None, validate=True, layout=Non
                                  (len(errs), "\n  ".join(errs[:8])))
         except Exception:
             pass
-    done = []
+    done, pdf_error = [], None
     for p in paths:
         ext = os.path.splitext(p)[1].lower()
         if ext in (".html", ".htm"):
             from engine.html_render import write_html
             write_html(summary, p, key, layout)
         elif ext == ".pdf":
-            from engine.pdf_render import build_pdf
-            build_pdf(summary, p, key, paper)
+            from engine.pdf_render import build_pdf, PdfUnavailable
+            try:
+                build_pdf(summary, p, key, paper)
+            except PdfUnavailable as e:      # build the other formats, then say so
+                pdf_error = e
+                continue
         elif ext == ".pptx":
             from engine.pptx_render import build_pptx
             build_pptx(summary, p, key)
         else:
             raise ValueError("Unsupported output %r (use .html, .pdf or .pptx)" % p)
         done.append(p)
+    if pdf_error:
+        raise type(pdf_error)("%s Built: %s. Tell the user the PDF couldn't be made in this app and offer the "
+                              "web page (they can save it as a PDF from their browser's print menu) or the "
+                              "PowerPoint. Never make a PDF any other way." % (pdf_error, ", ".join(done) or "nothing"))
     return done if isinstance(out, (list, tuple)) else done[0]
 
 

@@ -35,13 +35,15 @@ Write ONE Python script that loads, builds the summary with a recipe, and writes
 import sys
 sys.path.insert(0, "/mnt/skills/user/utm-grabber-reports/scripts")
 from helpers import load_entries, save_cached_entries
+from field_map import from_memory
 from recipes_v2 import get_recipe
 from build_report import build_report
 
+FMAP = from_memory(FIELD_MAP_LINES, "acme.com")    # the site's saved field map (mcp-usage.md)
 cur_pages = ["/home/claude/cur-p1.json", "/home/claude/cur-p2.json"]
 pri_pages = ["/home/claude/pri-p1.json"]
-current = load_entries(cur_pages)
-prior = load_entries(pri_pages)
+current = load_entries(cur_pages, field_map=FMAP)
+prior = load_entries(pri_pages, field_map=FMAP)
 
 summary = get_recipe("monthly")(current, prior, brand_profile=BRAND, customer_domain="acme.com",
                                 form_label="Gravity Forms")
@@ -49,8 +51,8 @@ paths = build_report(summary, ["/mnt/user-data/outputs/monthly-2026-10-05.html"]
 print(paths)
 
 # Cache every page file per window (after the build, so a cache error never costs the report)
-save_cached_entries(cur_pages, "acme.com", FORM_IDS, CUR_START, CUR_END)
-save_cached_entries(pri_pages, "acme.com", FORM_IDS, PRI_START, PRI_END)
+save_cached_entries(cur_pages, "acme.com", FORM_IDS, CUR_START, CUR_END, field_map=FMAP)
+save_cached_entries(pri_pages, "acme.com", FORM_IDS, PRI_START, PRI_END, field_map=FMAP)
 ```
 
 Cross-platform reports add the connector rows in the same script:
@@ -176,7 +178,8 @@ entries = load_cached_superset(customer_domain, form_ids, start_date, end_date)
 if entries is None:
     # Cache miss : call MCP, then save the result
     ... call get_entries ...
-    save_cached_entries(page_files, customer_domain, form_ids, start_date, end_date)  # every page file for this window, not just page 1
+    save_cached_entries(page_files, customer_domain, form_ids, start_date, end_date,
+                        field_map=fmap)  # every page file for this window, not just page 1
 ```
 
 Cache TTL is 4 hours (`CACHE_TTL_SECONDS` in `helpers.py`). A follow-up question minutes : or hours : after a report should never trigger a re-pull. UTM data isn't live-critical, so a longer TTL is safe and meaningfully reduces MCP round-trips for Q&A-heavy conversations.

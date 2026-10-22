@@ -35,7 +35,7 @@ For spend, cost per lead and revenue in the same story, run `full-funnel` instea
 4. **01 Channel mix**: donut of last-touch channels with an insight; when first-touch fields exist (UTM Grabber Premium), a first vs last touch grouped bar naming the channel that opens more journeys than it gets credit for.
 5. **02 Sources and campaigns**: top sources bar list; top campaigns table (leads bar, share, change, trend).
 6. **03 Volume**: leads per day, this period vs the prior (dashed).
-7. **04 Next steps**: 2 to 4 recommendations from thresholds (tagging under 85%, fastest-growing campaign, a campaign that fell below 60% of its prior volume, keep feeding the top channel).
+7. **04 Next steps**: 2 to 4 recommendations from thresholds (tagging under 85%, the growing campaign (up 15%+) with the most leads, a campaign that fell below 60% of its prior volume, keep feeding the top channel).
 8. **closing**: "Next: feed *{top source}*. It sent {share} of your leads." with four summary numbers and three recap lines.
 
 Empty window: short honest report. Under 10 leads: recipes still run; say the sample is small.

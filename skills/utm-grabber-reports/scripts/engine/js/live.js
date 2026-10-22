@@ -109,19 +109,74 @@
     }
     return "";
   }
-  function slim(raw, labels) {   // named keys (field_labels applied), then attribution fields only
+  // Same reading as the report engine (scripts/field_map.py apply()): nested `fields` flattened,
+  // field_labels applied, then the site's field map, so every form plugin reads the same.
+  var DATE_KEYS = ["date_created", "date", "created_at", "submitted_at", "entry_date", "created"];
+  var MONTH_NAMES = "january february march april may june july august september october november december".split(" ");
+  function p2(n) { return String(n).padStart(2, "0"); }
+  function normDate(v) {   // -> "YYYY-MM-DD HH:MM:SS" when the format is unambiguous, as field_map._date does
+    var s = String(v == null ? "" : v).trim(), m;
+    if (!s) return "";
+    if (/^\d{10}(\d{3})?$/.test(s)) {
+      var t = new Date(+s * (s.length === 13 ? 1 : 1000));
+      return t.getUTCFullYear() + "-" + p2(t.getUTCMonth() + 1) + "-" + p2(t.getUTCDate()) + " " +
+        p2(t.getUTCHours()) + ":" + p2(t.getUTCMinutes()) + ":" + p2(t.getUTCSeconds());
+    }
+    if ((m = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(:\d{2})?/.exec(s))) return m[1] + " " + m[2] + (m[3] || ":00");
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s + " 00:00:00";
+    if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(s)))
+      return m[3] + "-" + p2(m[1]) + "-" + p2(m[2]) + " " + p2(m[4] || 0) + ":" + (m[5] || "00") + ":" + (m[6] || "00");
+    if ((m = /^([A-Za-z]+) (\d{1,2}), (\d{4})(?: (\d{1,2}):(\d{2}))?$/.exec(s)) && MONTH_NAMES.indexOf(m[1].toLowerCase()) >= 0)
+      return m[3] + "-" + p2(MONTH_NAMES.indexOf(m[1].toLowerCase()) + 1) + "-" + p2(m[2]) + " " + p2(m[4] || 0) + ":" + (m[5] || "00") + ":00";
+    return s;
+  }
+  // Without a saved map: the plain names the page reads, recognised the way field_map.token() does
+  // ("UTM Source", "HandL ( handl_original_ref )", "gclid (HandL)" -> utm_source, handl_original_ref, gclid).
+  var PLAIN = toSetKeys("utm_source utm_medium utm_campaign traffic_source gclid fbclid msclkid handl_original_ref handl_url");
+  function toSetKeys(s) { var o = {}; s.split(" ").forEach(function (w) { o[w] = 1; }); return o; }
+  function token(name) {
+    var s = String(name || "").trim().toLowerCase(), first = /first[ _-]?touch/.test(s), m;
+    s = s.replace(/\(\s*first[ _-]?touch\s*,?\s*(handl)?\s*\)/g, " ").replace(/\(\s*handl\s*\)/g, " ");
+    if ((m = /^\s*handl\s*\(\s*(.*?)\s*\)\s*$/.exec(s))) s = m[1];
+    s = s.replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    return first && s.indexOf("first_") !== 0 ? "first_" + s : s;
+  }
+  function slim(raw, labels) {   // canonical names, then attribution fields only
     var fid = String(raw.form_id || raw["Form ID"] || "");
-    var map = (labels && labels[fid]) || {}, e = {};
-    Object.keys(raw).forEach(function (k) { e[map[k] || k] = raw[k]; });
-    var url = field(e, ["Source URL", "source_url"]), path = url;
+    var flat = {}, nested = raw.fields && typeof raw.fields === "object" ? raw.fields : {}, own = {};
+    Object.keys(nested).forEach(function (k) {   // WPForms and Divi wrap each answer: {name/label, value, ...}
+      var v = nested[k];
+      if (v && typeof v === "object" && "value" in v) {
+        if (typeof (v.label || v.name) === "string" && (v.label || v.name).trim()) own[k] = (v.label || v.name).trim();
+        v = v.value;
+      }
+      flat[k] = v;
+    });
+    Object.keys(raw).forEach(function (k) { if (k !== "fields" && k !== "param_keys") flat[k] = raw[k]; });
+    var map = Object.assign(own, (labels && labels[fid]) || {}), e = {};
+    Object.keys(flat).forEach(function (k) { e[map[k] || k] = flat[k]; });
+    Object.keys(flat).forEach(function (k) {   // owner-typed labels ("UTM Source") when the map doesn't cover them
+      var t = token(map[k] || k);
+      if (PLAIN[t] && !field(e, [t]) && field(flat, [k])) e[t] = flat[k];
+    });
+    var pk = raw.param_keys && typeof raw.param_keys === "object" ? raw.param_keys : {};
+    Object.keys(pk).forEach(function (p) {   // stored forms (OptimizePress): the plugin says which field holds each parameter
+      if (!field(e, [p]) && field(flat, [pk[p]])) e[p] = flat[pk[p]];
+    });
+    var fm = (CFG.field_map || {})[fid] || {};
+    Object.keys(fm.fields || {}).forEach(function (c) {   // never overwrite a value the entry already has
+      if (!field(e, [c]) && field(flat, [fm.fields[c]])) e[c] = flat[fm.fields[c]];
+    });
+    var url = field(e, ["Source URL", "source_url", "handl_url"]), path = url;
     try { if (url) path = new URL(url, "https://x.invalid").pathname || "/"; } catch (err) { path = url; }
-    return {d: field(e, ["Date Created", "date_created"]), s: field(e, ["utm_source (HandL)", "utm_source"]).toLowerCase(),
+    var d = field(e, ["Date Created"]) || (fm.date ? field(flat, [fm.date]) : "") || field(flat, DATE_KEYS);
+    return {d: normDate(d), s: field(e, ["utm_source (HandL)", "utm_source"]).toLowerCase(),
             m: field(e, ["utm_medium (HandL)", "utm_medium"]).toLowerCase(),
             c: field(e, ["utm_campaign (HandL)", "utm_campaign"]),
             ts: field(e, ["traffic_source (HandL)", "traffic_source"]).toLowerCase(),
             g: field(e, ["gclid (HandL)", "gclid"]) ? 1 : 0, f: field(e, ["fbclid (HandL)", "fbclid"]) ? 1 : 0,
             k: field(e, ["msclkid (HandL)", "msclkid"]) ? 1 : 0,
-            rf: field(e, ["referrer (first touch, HandL)", "referrer"]) ? 1 : 0, u: path, fm: fid};
+            rf: field(e, ["referrer (first touch, HandL)", "handl_original_ref", "referrer"]) ? 1 : 0, u: path, fm: fid};
   }
 
   // Channel rules match helpers.classify_traffic_source in the report engine.
