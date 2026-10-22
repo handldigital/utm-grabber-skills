@@ -1,0 +1,45 @@
+/* Studio dashboard: the brand color moves from a full-page cover to a slim
+   bar, so the numbers sit on the first screen. Panels stay white on a faintly
+   brand-tinted page; insights and the next step carry the soft brand tint. */
+body{background:color-mix(in srgb,var(--soft) 55%,var(--page))}
+.dash .d-top{background:var(--brand-fill);color:var(--on-brand);border-radius:16px;padding:10px 12px 10px 16px;margin-bottom:16px}
+.dash .d-top .logo-text{color:var(--on-brand);font-size:17px}
+.dash .d-top .logo-img{background:#FFFFFF;border-radius:8px;padding:3px 8px;max-height:30px}
+.dash .d-report{color:var(--on-brand);background:color-mix(in srgb,var(--on-brand) 14%,transparent);padding:4px 12px;border-radius:999px;font-weight:500;font-size:13px}
+.dash .d-period{color:var(--on-brand);border:1px solid color-mix(in srgb,var(--on-brand) 32%,transparent);padding:3px 11px;border-radius:999px;font-size:13px}
+.dash .d-top .src{background:color-mix(in srgb,var(--on-brand) 10%,transparent);border-color:color-mix(in srgb,var(--on-brand) 22%,transparent)}
+.dash .d-top .src-name{color:var(--on-brand)}
+.dash .d-top .src-detail{color:var(--on-brand-2)}
+.dash .d-top .src i{box-shadow:0 0 0 2px color-mix(in srgb,var(--on-brand) 55%,transparent)}
+.d-h1{font-weight:500;font-size:30px;letter-spacing:-.025em;line-height:1.12}
+.d-h1 .acc{font-weight:700;color:var(--brand-ink)}
+.d-next{background:var(--panel);border:none;border-radius:14px;padding:14px 18px}
+.d-hero .d-next{background:var(--soft)}
+.d-next-t{font-weight:500}
+.d-next-t .acc{font-weight:700}
+
+.d-kpis .kpi{border-radius:16px}
+.d-kpis .kpi-value{--fs:32px}
+.d-kpis .delta{padding:3px 10px 3px 8px;border-radius:12px;margin-top:8px}
+
+.panel{border-radius:18px;padding:18px 20px 16px}
+.p-title{font-weight:500;font-size:18px;letter-spacing:-.015em}
+.p-title .acc{font-weight:700}
+.panel.p-insight-card{background:var(--soft)}
+.panel .s-insight .h3{font-weight:500;letter-spacing:-.015em}
+.panel .ins{background:var(--soft)}
+.panel .s-funnel.has-side .ins{background:var(--soft)}
+.panel .tbl th{background:transparent}
+.panel .tbl tfoot td{background:var(--soft)}
+
+/* numbered plan, smaller badges */
+.panel .rec{border-radius:14px}
+.panel .rec-top{padding:14px 16px 0 52px}
+.panel .rec-top::before{left:14px;top:13px;width:28px;height:28px;font-size:13px}
+.panel .rec-body{padding:6px 16px 14px 52px}
+.panel .rec .h3{font-weight:500}
+
+@media (max-width:640px){
+  .dash .d-top{border-radius:14px}
+  .d-h1{font-size:23px}
+}

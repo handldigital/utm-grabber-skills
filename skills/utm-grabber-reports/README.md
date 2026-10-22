@@ -1,128 +1,78 @@
 # UTM Grabber Attribution Reports
 
-**Ask your UTM Grabber data anything. Get designer-quality reports, specific answers, or ready-to-paste UTM URLs back in seconds.**
+**Ask your UTM Grabber data anything. Get a designer-quality report back as a web page, a PDF, or an editable PowerPoint deck, in your brand and in the look you choose.**
 
-This is a Claude Skill that turns your live WordPress form data into branded attribution reports, conversational answers, forecasts, and tagged campaign URLs. It runs on Claude (Pro, Max, or Team) and pulls data directly from your own UTM Grabber site via the UTM Grabber MCP server.
+This is a Claude Skill. It reads your live WordPress form data through the UTM Grabber MCP server and turns it into branded attribution reports, plain-English answers, forecasts and tagged campaign URLs. Connect your ad, analytics and CRM tools to the same chat and it joins them to your leads, so you finally see which ads brought customers and what each one cost.
 
-Nothing is stored on our servers. Nothing is sent to anyone else. Your data stays between your WordPress site and your Claude.
+Nothing is stored on our servers. Your data flows from your WordPress site to your AI and back.
 
 ## What you get
 
-Install once. From then on, in any Claude conversation, you can:
+### 30 reports, one sentence away
 
-### Run reports
+- "Run my monthly report."
+- "Which ads actually brought us customers in September?"
+- "How much are we spending on keywords that never produce a lead?"
+- "Which pages get traffic but no leads?"
+- "How many leads came from ChatGPT this month?"
+- "Give me the quarterly review as a PowerPoint."
+- "Send me a pulse every morning."
 
-- "Run my monthly attribution report"
-- "Audit my UTM tags"
-- "Give me a deep dive on the Q1 Reactivation campaign"
-- "Show me my landing page performance"
-- "Forecast next week's lead volume"
+### Four looks
 
-### Ask specific questions
+| Look | Made for |
+|---|---|
+| **Studio** | Client-facing reports: your brand color on the cover, every change in plain English |
+| **Boardroom** | Presenting: dark, cinematic, big numbers |
+| **Ledger** | Analysts: dense tables and tabular figures, every number at a glance |
+| **Classic** | The original report design, unchanged |
 
-- "How many LinkedIn leads last week?"
-- "What was my top source yesterday?"
-- "Which campaign had the most HubSpot leads?"
-- "Did Facebook beat Google this month?"
+Every report works in every look, as a web page, a PDF and a PowerPoint deck. Your logo and colors carry through all of them.
 
-### Generate tagged URLs
+### Every format, done properly
 
-- "Generate UTMs for a new LinkedIn spring demo campaign with 3 variants"
-- "Help me tag a newsletter link"
-
-### Or use shortcuts
-
-- `/monthly`, `/weekly`, `/audit`, `/campaigns`, `/forecast`, `/help`
-- `/ask [question]`, `/build [spec]`, `/utm [campaign details]`
+- **Web page:** one file that works offline, on phones, and as an email attachment.
+- **PDF:** paginated like a printed report, page numbers, nothing split across pages.
+- **PowerPoint:** a real deck: editable charts, editable tables, your fonts embedded.
 
 ## The full report catalog
 
-| Report | What it answers |
-|---|---|
-| **Monthly Performance Review** | Full deck — channel mix, top sources, campaigns, volume trend, lead profile, multi-touch, recommendations. |
-| **Weekly Executive Summary** | One-pager for leadership — the week's headline number, top source, biggest shift. |
-| **Top Campaign Leaderboard** | Monday-morning scan. Every campaign ranked with trend icons. No narrative. |
-| **Campaign Deep Dive** | Everything about one campaign — sources, lead profile, verdict (scale / refresh / sunset). |
-| **UTM Hygiene Audit** | Exactly which pages and entries are missing tags, ranked by fix priority. |
-| **Paid vs Organic** | How your channels compare — volume, quality, first-touch vs last-touch. |
-| **Source-to-CRM Mapping** | For each CRM, which UTM sources drive those leads. |
-| **Lead Quality Scorer** | Ranks new leads by attribution + intent signals. For sales prioritization. |
-| **Lead Profile Enrichment** | Single-person dossier — every touch, every UTM, sales-angle bullets. |
-| **Anomaly Detector** | Surfaces unusual shifts — spikes, drops, new or disappearing sources. |
-| **Agency Client Rollup** | Multi-site view for agencies running UTM Grabber across many clients. |
-| **Form Performance** | Which forms on your site convert best, which are spam-heavy, which are dormant. |
-| **Landing Page Performance** | Which landing pages convert and which are leaking attribution. |
-| **Ad Creative Performance** | Which `utm_content` variants drive the best leads, with fatigue detection. |
-| **Keyword Performance** | Which paid-search `utm_term` values drive quality leads, with intent classification. |
-| **Predictive Forecast** | Next week's and next month's projected lead volume with confidence bands. |
-| **Budget Simulator** | What-if modeling — shift spend between channels and see projected outcomes. |
+**Core performance:** Monthly performance review · Weekly executive summary · Daily pulse · Quarterly business review · Campaign leaderboard · Campaign deep dive · Paid vs organic · Anomaly detector · Lead forecast · Side-by-side comparison · Agency client rollup
 
-## Plus three modes and two utilities
+**Leads, forms and tracking:** UTM hygiene audit · Lead quality scorer · Lead profile · Form performance · Landing page performance · Sources by CRM · When leads arrive
 
-- **Conversational Q&A** — specific questions get specific answers, inline, no deck.
-- **Custom Report Builder** — describe a unique report in plain English, get a custom deck.
-- **Prompt Shortcuts** — slash commands for power users who run the same reports routinely.
-- **UTM Template Generator** — generates copy-paste UTM URLs using your existing naming conventions pulled from your live data.
-- **Brand Onboarding** — 10-second setup that auto-detects your logo and brand colors from your website. Every future report uses your branding automatically. Agencies can maintain one profile per client and switch with `/brand switch [client]`.
+**Paid media, revenue and journeys:** Ad creative performance · Keyword performance · Budget simulator · Revenue by source (WooCommerce) · Leads from AI assistants · Customer journeys (first touch to last touch)
+
+**Cross-platform (with your ad, analytics or CRM connected):** Full-funnel performance · Which ads brought customers (true ROAS) · Ad platforms vs reality · Traffic that never converts · Close rate by first touch · Wasted spend finder
+
+## Plus modes and utilities
+
+- **Quick answers:** "How many LinkedIn leads last week?" answered inline, no deck.
+- **Custom reports:** describe a report in plain English.
+- **Shortcuts:** `/monthly`, `/weekly`, `/pulse`, `/qbr`, `/funnel`, `/roas`, `/audit`, `/styles`, `/theme boardroom` and more.
+- **UTM URL generator:** tagged links that follow your existing naming.
+- **Brand setup:** auto-detects your logo and colors from your website, then asks which look you want. Agencies keep one profile per client.
 
 ## What you need
 
-1. A WordPress site running **UTM Grabber v3** or later.
-2. An active **UTM Grabber MCP access code** (found under **Settings → UTM Grabber → AI & MCP**).
-3. A **Claude account** (Pro, Max, or Team).
+1. A WordPress site running **UTM Grabber** with the **AI Connector (MCP)** set up.
+2. Your **UTM Grabber MCP access link** (in WordPress: **UTM Grabber → AI & MCP**).
+3. A **Claude** account (Pro, Max, Team or Enterprise).
+4. Optional: your Google Ads, Meta Ads, Google Analytics, HubSpot or other connectors in the same AI app, for the cross-platform reports.
 
-## Setup (one time, ~90 seconds)
+## Setup (one time, about 90 seconds)
 
-### Step 1. Connect your site to Claude
-
-1. In Claude, go to **Settings → Connectors → Add custom connector**.
-2. Name: `UTM Grabber`
-3. URL: `https://api.utmgrabber.com/http/mcp/utmgrabber-report`
-4. Authentication: paste your access code from WordPress.
-
-### Step 2. Install the skill
-
-1. Download `utm-grabber-reports.skill` from your UTM Grabber account.
-2. In Claude, go to **Settings → Capabilities → Skills → Upload skill**.
-3. Choose the `.skill` file. Done.
-
-### Step 3. Try it
-
-> Run my monthly attribution report.
-
-Or:
-
-> /weekly
-
-Claude pulls your data, writes the insights, renders a branded HTML + PDF.
-
-## What's new in this release
-
-- **Period-over-period deltas on every metric.** Every number comes with `+12% vs last 30 days` context.
-- **Paid marketer depth.** Landing page, ad creative, and keyword reports for PPC managers.
-- **Predictive forecasting.** Budget-grade next-week and next-month projections.
-- **Conversational Q&A mode.** Ask a question, get an answer. No deck required.
-- **UTM Template Generator.** Stops attribution leaks at the source by generating correctly-styled URLs based on your real data.
-- **Accessibility.** WCAG-AA colors, grayscale-legible charts, screen reader support.
-
-## Want to customise?
-
-The skill is a folder of markdown and HTML. If you're technical, you can:
-
-- Change brand colours in `templates/report-shell.html` — swap 5 CSS variables, the whole brand cascades.
-- Adjust narrative voice in `references/narrative-voice.md`.
-- Add your own report by copying any file in `reports/` as a starting point.
-
-For agencies white-labelling reports for clients, the entire brand swaps with 5 CSS variables. See `references/design-system.md`.
+1. In Claude, go to **Settings → Connectors → Add custom connector**. Name: `UTM Grabber`. URL: your access link from WordPress.
+2. Download `utm-grabber-reports.skill` and upload it in **Settings → Capabilities → Skills**.
+3. Say: "Run my monthly report." Or try `/styles` to see the four looks.
 
 ## Privacy and data
 
-- Your WordPress data flows directly from your site into your Claude conversation — never through Anthropic's or UTM Grabber's servers for storage.
-- The MCP access code is rotatable from your WordPress admin at any time.
-- Nothing is cached between sessions — every report is generated fresh.
+- Your WordPress data goes from your site to your AI conversation. It is never stored by UTM Grabber.
+- The MCP access link can be rotated from WordPress at any time.
+- Reports never call outside services: fonts and charts are built into each file.
 
 ## Support
 
 - Docs: https://docs.utmgrabber.com
 - Email: support@utmgrabber.com
-- Live chat: utmgrabber.com

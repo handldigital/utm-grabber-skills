@@ -125,7 +125,8 @@ def _build_entry(i, date, source, medium, campaign, is_new=False):
 
 def _generate_period(start_date, days, base_per_day=16):
     """Generate entries across a period with realistic variance + weekly dips."""
-    random.seed(hash(start_date.isoformat()) & 0xFFFF)
+    import zlib
+    random.seed(zlib.crc32(start_date.isoformat().encode()) & 0xFFFF)
     entries = []
     idx = 0
     for d in range(days):

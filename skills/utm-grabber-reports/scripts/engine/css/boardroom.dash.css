@@ -1,0 +1,45 @@
+/* Boardroom dashboard: the dark stage and the soft brand spotlight stay; the
+   tall condensed numerals carry the KPI band. Panels are quiet, insights glow. */
+.dash .d-top{border-bottom:1px solid var(--line-css);padding-bottom:12px;margin-bottom:14px}
+.dash .d-top .logo-text{font-size:18px}
+.d-report{font-size:14px;letter-spacing:.01em}
+.d-period{font-size:14px}
+.d-top .src{background:color-mix(in srgb,var(--panel) 70%,transparent)}
+.d-h1{font-size:34px;line-height:1.06;letter-spacing:-.025em;max-width:40ch}
+.d-dek{font-size:15.5px}
+
+.d-kpis{gap:12px}
+.d-kpis .kpi{border-radius:14px;padding:14px 16px 12px}
+.d-kpis .kpi-label{font-size:13px}
+.d-kpis .kpi-value{--fs:42px;line-height:.95;margin-top:8px}
+.d-kpis .delta{font-size:12.5px}
+
+.panel{border-radius:16px}
+.p-kicker{font-size:12.5px}
+.p-title{font-size:19px;letter-spacing:-.015em}
+.panel.p-insight-card{background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 20%,var(--panel)) 0%,var(--panel) 72%);
+  border-color:color-mix(in srgb,var(--brand-ink) 28%,transparent)}
+.panel.p-insight-card.tone-good{background:linear-gradient(135deg,var(--good-soft) 0%,var(--panel) 72%)}
+.panel.p-insight-card.tone-bad{background:linear-gradient(135deg,var(--bad-soft) 0%,var(--panel) 72%)}
+.panel.p-insight-card.tone-warn{background:linear-gradient(135deg,var(--warn-soft) 0%,var(--panel) 72%)}
+.panel .s-insight .h3{font-size:21px;letter-spacing:-.015em;line-height:1.2}
+.panel .ins{background:var(--panel2)}
+.d-next{background:var(--panel2);border:1px solid var(--line-css);border-left:3px solid var(--brand-ink)}
+.d-hero .d-next{background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 18%,var(--panel)) 0%,var(--panel) 75%)}
+.d-next-t{font-size:17px}
+
+.panel .tbl td.c-number{font-size:16.5px}
+.panel .tbl td.c-rank{font-size:15px}
+.panel .bl-val{font-size:16px}
+.panel .fn-val{font-size:23px}
+.panel .cmp-cell b{font-size:16px}
+.panel .sc-value{font-size:21px}
+.panel .co-value{--fs:34px}
+.panel .hero-value{--fs:72px}
+.panel .rec-top::before{font-size:26px;margin-bottom:8px}
+.panel .rec .h3{font-size:17px}
+
+@media (max-width:640px){
+  .d-h1{font-size:25px}
+  .d-kpis .kpi-value{--fs:34px}
+}

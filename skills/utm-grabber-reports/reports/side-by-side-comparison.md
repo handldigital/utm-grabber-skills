@@ -3,66 +3,38 @@
 ## Triggers
 
 - `/compare`
-- `compare`
-- `vs`
-- `X vs Y`
-- `side by side`
+- "compare", "X vs Y", "side by side", "which is better"
 
 ## Purpose
 
-Compares two entities on equivalent metrics: two campaigns, two sources, two periods, two landing pages, two CRMs. Answers "which is working better and by how much?"
+Any two segments on the same measures: two campaigns, two sources, two forms or two periods. Answers "which is working better, by how much, and on what?" with a verdict per measure.
 
-## Before you build
+## Build it
 
-1. Read `references/design-contract.md` — the two-tone house style, italic-accent rule, forbidden patterns.
-2. Read `scripts/template-schema.md` — section type reference.
-3. Read `references/rendering-pipeline.md` — MCP strategy and tool-call budgets.
+```python
+from recipes_v2 import get_recipe
+summary = get_recipe("side-by-side")(google_leads, "Google Ads", meta_leads, "Meta Ads",
+                                     brand_profile=brand, customer_domain="acme.com")
+```
 
-The final deliverable renders via `templates/report-shell.html` (HTML default), with `scripts/build_pdf.py`, `scripts/build_pptx.py`, or `scripts/build_csv.py` available as alternative output formats offered after the HTML.
+Registry keys: `side-by-side`, `compare`, `comparison`.
+Signature: `build_side_by_side(a_entries, a_label, b_entries, b_label, brand_profile=None, customer_name=None, customer_domain="", form_label=None, compare_label=None, prepared_by=None, prepared_for=None, **kwargs)`
 
-## Data needs
-
-- Two subjects: parse from user request (e.g., "compare Q1-Search vs Q1-Display")
-- Filter entries to each subject separately
-- Compute same metrics for both sides: volume, daily avg, top source, hygiene, conversion quality
-
-**Prior period required:** no
-
-This report uses a single-period pull only. Do NOT run a second `get_entries` call — see `references/rendering-pipeline.md` on skipping the prior-period pull for non-delta reports.
+- Filter each side before calling (for example by utm_source or utm_campaign). For two periods, pass each period's entries with labels such as "September" and "August".
+- Sides in the same window share a calendar; different windows are lined up by day number.
+- One side empty: a short report saying which filter to check.
 
 ## Section order
 
-The report emits these sections, in this order:
-
-**title-block**
-: Kicker: "Side-by-Side · [subject A] vs [subject B]". Title: `"The *verdict* is in."` Meta: period, leads A, leads B.
-
-**stat-strip**
-: 2 stats per side (4 total): leads A, leads B, avg A, avg B. Use grouped visual rhythm.
-
-**chart**
-: Bar-grouped: metrics side-by-side (leads, leads/day, hygiene %, top-source share). Two bars per metric.
-
-**insight-card**
-: Kicker "The winner". Title: `"*[Subject A]* wins on volume. *[Subject B]* wins on quality."` Body: split decision explained.
-
-**ranked-list**
-: Top 5 differences with columns: metric, A value, B value, delta, winner.
-
-**recommendations**
-: 3 actions: what to learn from the winner, what to salvage from the loser, which test to run next.
-
-**closing**
-: Title: `"The *better* bet, clearly."`
-
+1. **title-block**: "*Google Ads* brought 79% more leads than Meta Ads." (or "3.3x the leads"). Subtitle: each side's leads and tagged share.
+2. **stat-strip**: A leads and B leads (daily sparks), lead gap, tagging gap, both framed from the leading side.
+3. **01 Head to head**: comparison rows: leads, leads per day (when windows differ), fully tagged, paid share, sources with leads, top source share, top campaign share, plus budget and timeframe rows when the form asks them. A tick needs a material gap: 3+ points on a rate, 3%+ on a count. Paid share and concentration are context, never wins.
+4. **insight-card** "The verdict": "*Google Ads* wins 3 of 3 measures." or a split decision.
+5. **02 Rhythm**: leads per day, both sides.
+6. **03 Channel mix**: share of each side's leads by channel, with the biggest gap called out.
+7. **04 Next steps**: lift the weaker side's tagging (10+ pts behind), study what the bigger side does differently (10%+ more leads), test the winner's top source on the other side, weigh lead quality when a quality row differs by 10+ pts, tag both sides when both are under 80%.
+8. **closing**: the first recommendation as "Next: ..." with the number behind it.
 
 ## Voice guidance
 
-Judicial. No hedging — name the winner on each metric. If it's a split decision, say so and rank the metrics by importance.
-
-## What never changes
-
-- Report uses the shared two-tone card language across every container.
-- Every title has at most ONE `*word*` italic accent, rendered as italic brand-primary.
-- Never invent new section types per report — stick to the 10 in `template-schema.md`.
-- After delivering the HTML, offer PDF / PPTX / CSV as a one-line follow-up (see `SKILL.md` Rule 2).
+Judicial. Name the winner on each measure; call a split decision a split. Keep the verdict to measures where a higher number is plainly better, and say so.

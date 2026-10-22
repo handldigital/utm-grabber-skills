@@ -139,27 +139,25 @@ The report must render even if the profile is empty. Branding is additive, not r
 Brand profiles contain only publicly shareable data (company name, public logo URL, brand colors). No access codes, no passwords, no PII. Safe to persist in Claude memory.
 
 
-## Theme (v0.9.5+, PPTX-only as of v0.9.10)
+## Theme (v2.0)
 
-Brand profiles support an optional `theme` field controlling the visual palette **for PPTX output only**:
+Brand profiles carry a `theme` that applies to **every format** (HTML, PDF and PowerPoint):
 
-- `theme: "light"` (default) — white slide backgrounds, dark ink text, tinted two-tone cards with brand-color accents. Editorial magazine feel. Works best when charts and data density matter most. Used for all HTML and PDF output regardless of this setting.
-- `theme: "gradient"` — dark diagonal gradient (ink → ink mixed with 35% brand primary at 45°) slide backgrounds, white text, dark brand-tinted two-tone cards, brand colors pop bright. More dramatic, better for executive projector decks. **PPTX only.** HTML and PDF ignore this setting and render in the light editorial style, since gradient backgrounds don't translate well to print or small screens.
+| `theme` | Look |
+|---|---|
+| `studio` (default) | Bright and friendly, brand-color cover, plain-English changes. Client-facing. |
+| `boardroom` | Dark and cinematic. For presenting. |
+| `ledger` | Dense and exact. For analysts and weekly ops. |
+| `classic` | The original v1 design (two-tone cards, italic serif numbers). |
+
+Old values still work: `"light"` = `classic`, `"gradient"` = `boardroom`.
 
 ```json
 {
   "company_name": "Acme Analytics",
-  "theme": "gradient",
-  "colors": {
-    "primary": "#0160BF",
-    "accent": "#2E90FA",
-    "ink": "#0B1B34",
-    "muted": "#64748B",
-    "surface": "#F5F7FB"
-  }
+  "theme": "studio",
+  "colors": {"primary": "#0160BF", "accent": "#2E90FA", "ink": "#0B1B34", "muted": "#64748B", "surface": "#F5F7FB"}
 }
 ```
 
-The same recipe code produces both themes — switching is a one-line change in the brand profile. Charts stay on a white canvas in both modes (chart readability trumps theme consistency). Italic-accent and brand-rule conventions are identical across themes.
-
-When setting up a brand with `/brand`, Claude should ask about theme preference. When in doubt, default to `"light"` — it's safer for mixed-audience decks.
+A user can override the saved theme for one report ("send this one in Boardroom") without changing the profile. To change the default, `/theme boardroom` (or `/brand edit`) saves it. Theme details: `references/themes.md`.

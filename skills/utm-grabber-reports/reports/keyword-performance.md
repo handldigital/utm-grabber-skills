@@ -6,62 +6,50 @@
 - `keyword performance`
 - `which keywords`
 - `utm_term performance`
+- `search terms`
 
 ## Purpose
 
-Ranks paid-search keywords (by utm_term) within Google Ads / Bing. Answers "which search terms actually drive leads vs. just click?"
+Ranks search terms (utm_term) by leads and sorts each one by intent with plain, visible rules: brand, competitor, problem or urgent, generic. Answers "what were people searching for when they became leads, and which terms deserve more budget?"
 
-## Before you build
+## Build it
 
-1. Read `references/design-contract.md` — the two-tone house style, italic-accent rule, forbidden patterns.
-2. Read `scripts/template-schema.md` — section type reference.
-3. Read `references/rendering-pipeline.md` — MCP strategy and tool-call budgets.
+```python
+from recipes_v2 import get_recipe
+summary = get_recipe("keyword")(current, prior, competitors=["Acme Dental", "smileco"],
+                                ad_rows=ad_rows, brand_profile=brand, customer_domain="example.com")
+```
 
-The final deliverable renders via `templates/report-shell.html` (HTML default), with `scripts/build_pdf.py`, `scripts/build_pptx.py`, or `scripts/build_csv.py` available as alternative output formats offered after the HTML.
+Registry keys: `keyword`, `keywords`, `keyword-performance`, `utm-term`, `search-terms`.
+Signature: `build_keyword(current, prior=None, competitors=None, brand_terms=None, ad_rows=None, brand_profile=None, customer_name=None, customer_domain="", compare_label=None, prepared_by=None, prepared_for=None, **kwargs)`
 
-## Data needs
+- `current`: UTM Grabber entries for the period.
+- `prior` (optional): adds change columns and intent-share deltas.
+- `competitors` (optional): competitor names. Without it no term is marked competitor, and the chart says so.
+- `brand_terms` (optional): extra brand words beyond the customer name and domain.
+- `ad_rows` (optional): AdRow list with keyword text. Adds keyword spend, a cost per lead column and negative-keyword suggestions.
 
-- Single period: last 30 days
-- Filter entries with a populated utm_term AND paid search medium (cpc)
-- Group by utm_term; optionally group by (utm_source, utm_term) to split Google vs Bing
+## Intent rules (first match wins)
 
-**Prior period required:** no
+1. **Brand**: the term contains the customer name (with or without spaces), the domain stem, a distinctive word of the name (5+ letters, not a common business word like dental or marketing), or a `brand_terms` entry.
+2. **Competitor**: the term contains a name from `competitors`.
+3. **Problem or urgent**: the term contains emergency, urgent, near me, now, today, fix, repair, broken, pain, cost, price, quote, cheap, affordable and similar words (full list in the notes section).
+4. **Generic**: everything else.
 
-This report uses a single-period pull only. Do NOT run a second `get_entries` call — see `references/rendering-pipeline.md` on skipping the prior-period pull for non-delta reports.
+Terms are grouped ignoring case, quotes and match-type symbols. Negatives are suggested only when ad rows show spend on a term with no leads.
 
 ## Section order
 
-The report emits these sections, in this order:
+1. **title-block**: headline names the intent that brought the most keyword leads. Subtitle names the top term and counts paid search leads with no keyword.
+2. **stat-strip** (up to 5, in this priority): keyword leads (spark, delta), brand share (pts delta), urgent share when present, keyword spend when connected, paid search leads with no keyword, search terms, top term share.
+3. **section-header 01 Search intent** + **chart-insight** (bar-horizontal of the four intents, terms per intent as notes).
+4. **section-header 02 Keywords** + **ranked-list**: keyword (mono), intent badge, leads bar, share, change vs prior, cost per lead when spend matches.
+5. **section-header 03 Next steps** + **recommendations**: negatives for zero-lead spenders, pass the keyword in utm_term, push the growing term, grow non-brand search, answer urgent searchers first, check brand tagging.
+6. **notes**: the exact intent rules, brand words used, competitor list, spend status.
+7. **closing**: next step with the number behind it.
 
-**title-block**
-: Kicker: "Keyword Performance · [date range]". Title: `"Which *terms* convert."` Meta: keywords tracked, total leads, period.
-
-**stat-strip**
-: 3 stats: keywords tracked, top keyword leads, match-type mix %.
-
-**chart**
-: Horizontal bar of top 10 keywords.
-
-**ranked-list**
-: Top 10 with columns: rank, keyword, source (google/bing), leads, trend.
-
-**insight-card**
-: Kicker "Pattern". Title naming a theme in the top keywords (branded vs. generic, long-tail vs. short, intent level).
-
-**recommendations**
-: 3 actions: add more long-tail around top themes, pause zero-lead keywords, review bid strategy on top converters.
-
-**closing**
-: Title: `"Bid on *intent*, not volume."`
-
+Fewer than 10 keyword leads: a short version with the terms and their intent. No utm_term at all: a short version explaining the `utm_term={keyword}` tracking template.
 
 ## Voice guidance
 
-PPC-manager-ready. Reference match types, intent, Quality Score implicitly. Keep it actionable inside Google Ads.
-
-## What never changes
-
-- Report uses the shared two-tone card language across every container.
-- Every title has at most ONE `*word*` italic accent, rendered as italic brand-primary.
-- Never invent new section types per report — stick to the 10 in `template-schema.md`.
-- After delivering the HTML, offer PDF / PPTX / CSV as a one-line follow-up (see `SKILL.md` Rule 2).
+PPC-manager ready: match types, bids, negatives, tracking templates. Keep it actionable inside Google Ads and Microsoft Ads. Quote search terms exactly as they arrived. Never claim a term converts better without spend data to back it.

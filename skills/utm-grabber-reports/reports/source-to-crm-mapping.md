@@ -3,65 +3,36 @@
 ## Triggers
 
 - `/source-crm`
-- `source to crm`
-- `crm by source`
-- `which sources feed which crms`
+- "source to crm", "crm by source", "which sources feed which crms"
 
 ## Purpose
 
-Cross-tabs traffic sources against declared CRM platforms. Answers "which of my sources bring customers who use which CRMs?" Useful for B2B tool vendors.
+For B2B forms that ask "Which CRM do you use?": which UTM sources bring leads on which CRM, and where a channel clearly leans toward one stack. Answers "how should messaging change by channel?"
 
-## Before you build
+## Build it
 
-1. Read `references/design-contract.md` — the two-tone house style, italic-accent rule, forbidden patterns.
-2. Read `scripts/template-schema.md` — section type reference.
-3. Read `references/rendering-pipeline.md` — MCP strategy and tool-call budgets.
+```python
+from recipes_v2 import get_recipe
+summary = get_recipe("source-to-crm")(current, prior, brand_profile=brand, customer_domain="acme.com")
+```
 
-The final deliverable renders via `templates/report-shell.html` (HTML default), with `scripts/build_pdf.py`, `scripts/build_pptx.py`, or `scripts/build_csv.py` available as alternative output formats offered after the HTML.
+Registry keys: `source-to-crm`, `source-crm`, `crm`.
+Signature: `build_source_to_crm(current, prior=None, brand_profile=None, customer_name=None, customer_domain="", form_label=None, compare_label=None, prepared_by=None, prepared_for=None, crm_field=None, **kwargs)`
 
-## Data needs
-
-- Single period: last 30 days
-- Require a `crm` form field in entries
-- Group by (utm_source, crm) → count leads in each cell
-
-**Prior period required:** no
-
-This report uses a single-period pull only. Do NOT run a second `get_entries` call — see `references/rendering-pipeline.md` on skipping the prior-period pull for non-delta reports.
+- The CRM question is found automatically (any form field whose label contains "crm"); pass `crm_field="Your CRM"` to force one.
+- Answers are grouped by spelling (hubspot and HubSpot); "none" or "no" shows as No CRM.
+- No CRM field: a one-page honest report with the exact question to add. Under 10 answers: a short version asking to make the question required.
+- `prior` (optional, 10+ leads): adds deltas on the answer rate and the top CRM's share.
 
 ## Section order
 
-The report emits these sections, in this order:
-
-**title-block**
-: Kicker: "Source to CRM Mapping · [date range]". Title: `"Which *sources* bring which CRMs."` Meta: sources, CRMs declared, period.
-
-**stat-strip**
-: 3 stats: sources active, CRMs declared, top pairing leads.
-
-**chart**
-: Bar-stacked: top 5 sources × top CRMs. Each source is a bar segmented by CRM.
-
-**ranked-list**
-: Top source-CRM pairings with columns: rank, source, CRM, leads, % of that CRM's total.
-
-**insight-card**
-: Kicker "Match-making". Title: the clearest signal (e.g., `"*HubSpot* users come from LinkedIn. *Salesforce* from paid search."`)
-
-**recommendations**
-: 3 actions: target messaging to dominant CRM per channel, test CRM-specific landing pages, suppress offers for mismatched CRMs.
-
-**closing**
-: Title: `"Personalize by *CRM*."`
-
+1. **title-block**: "*Salesforce* leads the CRM answers at 26%, mostly from Google." Subtitle: how many answered and the clearest pairing.
+2. **stat-strip**: answered the CRM question (pts), CRMs named, the top CRM's share (pts), no CRM yet.
+3. **01 The map**: heatmap of top sources (plus "No UTM source") by CRM, then an insight on the strongest pairing by lift: "LinkedIn leads name *HubSpot* 3.2x as often as average." A pairing needs 5+ leads and an excess beyond 2 standard deviations; otherwise the card says no source leans hard.
+4. **02 By CRM**: table: CRM, leads bar, share, top source, and the source it leans toward (1.2x or more).
+5. **03 Next steps**: speak the CRM in that channel's ads, build a CRM-specific landing page for the second pairing, give no-CRM leads their own path (15%+), make the question required (under 70% answered), tag untagged answers (25%+).
+6. **notes** and **closing**: "Next: speak *HubSpot* in LinkedIn ads. 65% of those leads use it."
 
 ## Voice guidance
 
-B2B sophistication. Understand that CRM usage signals company maturity, budget, and stack preference.
-
-## What never changes
-
-- Report uses the shared two-tone card language across every container.
-- Every title has at most ONE `*word*` italic accent, rendered as italic brand-primary.
-- Never invent new section types per report — stick to the 10 in `template-schema.md`.
-- After delivering the HTML, offer PDF / PPTX / CSV as a one-line follow-up (see `SKILL.md` Rule 2).
+B2B sophistication: a CRM signals company maturity and budget. Only call a pairing a pattern when the rule says so; small samples are named as such, not dressed up.

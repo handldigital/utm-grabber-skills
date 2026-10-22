@@ -10,59 +10,39 @@
 
 ## Purpose
 
-Full attribution history for a single lead — every touchpoint, every UTM parameter, every form field. Answers "who is this lead and how did they actually get here?"
+Everything UTM Grabber recorded about one person: how they found you, what closed them, every submission with its UTM values, what they typed into the forms, and the angle for the first sales call. Answers "who is this lead and how did they actually get here?"
 
-## Before you build
+## Build it
 
-1. Read `references/design-contract.md` — the two-tone house style, italic-accent rule, forbidden patterns.
-2. Read `scripts/template-schema.md` — section type reference.
-3. Read `references/rendering-pipeline.md` — MCP strategy and tool-call budgets.
+```python
+from recipes_v2 import get_recipe
+summary = get_recipe("lead-profile")(all_entries, "jane@acme.com", forms=forms,
+                                     brand_profile=brand, customer_domain="example.com")
+```
 
-The final deliverable renders via `templates/report-shell.html` (HTML default), with `scripts/build_pdf.py`, `scripts/build_pptx.py`, or `scripts/build_csv.py` available as alternative output formats offered after the HTML.
+Registry keys: `lead-profile`, `lead`, `profile`, `lead-profile-enrichment`.
+Signature: `build_lead_profile(all_entries, lead_email=None, brand_profile=None, customer_name=None, customer_domain="", compare_label=None, prepared_by=None, prepared_for=None, forms=None, **kwargs)`
 
-## Data needs
-
-- Filter: single email or entry ID from the user
-- Return ALL entries for that email across history, plus the enriched profile (company, titles, declared spend, CRM)
-- If multiple sessions: show first-touch and last-touch separately
-
-**Prior period required:** no
-
-This report uses a single-period pull only. Do NOT run a second `get_entries` call — see `references/rendering-pipeline.md` on skipping the prior-period pull for non-delta reports.
+- `all_entries`: pull a wide date range so every submission from this person is included.
+- `lead_email`: matched exactly, ignoring case, across every email field.
+- `forms` (optional): `[{"id", "title"}]` so submissions show form names instead of IDs.
 
 ## Section order
 
-The report emits these sections, in this order:
+1. **title-block**: "{Name} found you through {channel} and filled N forms." Kicker carries the masked email.
+2. **callouts** (up to 4): how they found you (first touch, or the earliest form when first touch was not captured), what closed them (the touch before the first form, with the search term or campaign), days to convert (first visit to first form, or first form to latest), submissions.
+3. **insight-card** "The sales angle": the topic to open with (service, search term, campaign, timeline or budget), their stated timing and budget, repeat visits, and the lead score from the lead quality scorer rules.
+4. **section-header 01 The journey** + **timeline**: the first visit (landing page, referrer domain, first-touch UTMs) and every submission with source, medium, campaign, term, content and click ID type as tags.
+5. **section-header 02 The answers** + **ranked-list** of form fields: latest answer per field, email and phone masked, system and attribution fields left out.
+6. **section-header 03 Next steps** + **recommendations**: open the call with the topic, record the first touch in the CRM, merge duplicate submissions, reply by email when no phone was given.
+7. **closing**: "Next: call {name} about {topic}." with the number behind it.
 
-**title-block**
-: Kicker: "Lead Profile · [redacted email]". Title: `"Who *they* are."` Meta: first seen, last seen, total touchpoints.
+Email not found: a short, honest report saying how many submissions were searched and what to check.
 
-**stat-strip**
-: 4 stats: touchpoints, days active, forms submitted, declared spend (if any).
+## Privacy
 
-**insight-card**
-: Kicker "First touch". Title: where they came from originally (e.g., `"Found you via *LinkedIn* ad, 47 days ago."`) Body: their first landing page and UTMs.
-
-**ranked-list**
-: Every touchpoint chronologically with columns: date, source·medium, campaign, landing page, form.
-
-**insight-card**
-: Kicker "Declared context". Title: synthesizing their form answers (spend bracket, CRM, urgency, company type).
-
-**recommendations**
-: 2 actions: what to say on the sales call given the attribution path, which CRM fields to pre-fill from the data.
-
-**closing**
-: Title: `"Ready for *your* outreach."` Body: offer CSV export of just this lead's history.
-
+Emails are masked (`j***@domain.com`), phone numbers keep only the last four digits, IP addresses and user agents are never printed, referrers show the domain only.
 
 ## Voice guidance
 
-Sales-rep-ready. A human, not a row in a spreadsheet. Privacy: always mask/truncate emails in shown output.
-
-## What never changes
-
-- Report uses the shared two-tone card language across every container.
-- Every title has at most ONE `*word*` italic accent, rendered as italic brand-primary.
-- Never invent new section types per report — stick to the 10 in `template-schema.md`.
-- After delivering the HTML, offer PDF / PPTX / CSV as a one-line follow-up (see `SKILL.md` Rule 2).
+Sales-rep ready. A person, not a row in a spreadsheet. Use their first name, quote what they searched, and keep every claim tied to a recorded touch or answer.

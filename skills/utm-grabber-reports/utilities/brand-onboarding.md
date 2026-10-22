@@ -190,6 +190,27 @@ Before saving any profile, validate:
 
 These checks prevent the most common "my report looks weird" failure modes.
 
+### Pick a look (after colors, every path)
+
+Once colors are confirmed, offer the four looks with buttons. Render the user's first report (or a sample) in their pick afterwards.
+
+```
+ask_user_input_v0({
+  "questions": [{
+    "question": "Which look should your reports use?",
+    "type": "single_select",
+    "options": [
+      "Studio: bright, your color on the cover (recommended)",
+      "Boardroom: dark, made for presenting",
+      "Ledger: dense, every number at a glance",
+      "Classic: the original report design"
+    ]
+  }]
+})
+```
+
+Save the answer as `theme` (`studio`, `boardroom`, `ledger`, `classic`) in the profile. If the user wants to compare, render one report in all four looks and let them pick. Skip the question if the user already said which look they want.
+
 ### Option C: Skip
 
 If they say "skip" or ignore the prompt, save a minimal profile:
@@ -268,6 +289,9 @@ Create a new brand profile (agency use case). Runs auto-detection on the website
 Delete a saved profile. Always confirm before removing:
 
 > Remove **peak-health** profile? This cannot be undone. Reply "yes" to confirm.
+
+### `/theme [studio|boardroom|ledger|classic]`
+Set the active profile's default look. No argument: show the four looks as buttons. "Show me the styles" renders the latest report in all four.
 
 ### `/brand reset`
 Remove ALL saved profiles and restore UTM Grabber defaults. Confirmation required.

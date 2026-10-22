@@ -3,67 +3,36 @@
 ## Triggers
 
 - `/anomaly`
-- `anomalies`
-- `what changed`
-- `sudden drop`
-- `spike`
+- "anomalies", "what changed", "sudden drop", "spike", "is something broken"
 
 ## Purpose
 
-Surfaces channels, campaigns, or sources whose lead volume has changed dramatically vs their 30-day baseline. Answers "what shifted in the last week and should I care?"
+What moved this week against its usual pace, across channels, sources and campaigns, and where to look first. Separates real changes from normal random swing, so nobody chases noise.
 
-## Before you build
+## Build it
 
-1. Read `references/design-contract.md` — the two-tone house style, italic-accent rule, forbidden patterns.
-2. Read `scripts/template-schema.md` — section type reference.
-3. Read `references/rendering-pipeline.md` — MCP strategy and tool-call budgets.
+```python
+from recipes_v2 import get_recipe
+summary = get_recipe("anomaly")(last_7_days, previous_30_days, brand_profile=brand, customer_domain="acme.com")
+```
 
-The final deliverable renders via `templates/report-shell.html` (HTML default), with `scripts/build_pdf.py`, `scripts/build_pptx.py`, or `scripts/build_csv.py` available as alternative output formats offered after the HTML.
+Registry keys: `anomaly`, `anomalies`, `what-changed`.
+Signature: `build_anomaly(current, baseline, brand_profile=None, customer_name=None, customer_domain="", form_label=None, compare_label=None, prepared_by=None, prepared_for=None, **kwargs)`
 
-## Data needs
-
-- Current period: last 7 days
-- Baseline: last 30 days (to compute rolling average per channel)
-- Compute per-channel z-score or % deviation from baseline
-- Flag anomalies: > 2 stddev up/down, or > 50% change in volume from baseline
-
-**Prior period required:** no
-
-This report uses a single-period pull only. Do NOT run a second `get_entries` call — see `references/rendering-pipeline.md` on skipping the prior-period pull for non-delta reports.
+- `current`: the window to check (usually the last 7 days). Empty: an honest empty report that says to test the forms.
+- `baseline`: the period before it (30 days is typical). Any overlap with the window is dropped. No baseline: a short report asking for one.
+- Expected = baseline leads scaled to the window's length. Fix: a drop of 50%+ beyond 2 standard deviations. Watch: a drop of 25%+ beyond 1.5. Spike: a rise of 50%+ beyond 2. Drops and spikes need 5+ leads involved. Went quiet: 3+ expected and none arrived (Fix at 4+). New: under 1 expected and 3+ arrived.
 
 ## Section order
 
-The report emits these sections, in this order:
-
-**title-block**
-: Kicker: "Anomaly Detector · Last 7 days". Title: `"What *changed* this week."` Meta: baseline window, period, anomaly count.
-
-**stat-strip**
-: 3 stats: anomalies detected, largest drop %, largest spike %.
-
-**insight-card**
-: Kicker "Headline anomaly". Title: the single biggest change (e.g., `"*Facebook ads* dropped 62% vs baseline."`) Body: what a marketer should immediately check.
-
-**ranked-list**
-: All detected anomalies with columns: rank, channel/source/campaign, baseline avg, current, delta %, state (rising/cooling/cold).
-
-**section-header**
-: Number "02". Kicker "What to investigate". Title: `"Where to *look*."`
-
-**recommendations**
-: 4 investigation paths for the top anomalies: check ad account status, review budget changes, examine creative approval queue, verify pixel fires. Not fixes — *investigations*.
-
-**closing**
-: Title: `"Run this *daily* during volatile weeks."` Body: suggest the monthly review for context.
-
+1. **title-block**: the biggest drop first: "The *Lookalike* campaign ran 84% below its usual pace this week.", else the biggest spike, else "No *anomalies* this week."
+2. **stat-strip**: leads vs expected (spark), flagged, largest drop, largest rise (each marked "within normal swing" when not flagged).
+3. **01 The scorecard**: flagged items first (Fix, Watch, Spike, New), topped up with healthy channels for context.
+4. **02 By source**: change vs the usual pace for the top 8 sources (diverging bars, rises capped at +200%), then callouts for a new source, a source that went quiet, the biggest drop and spike.
+5. **03 Daily**: baseline days, this window and the baseline's daily average.
+6. **04 What to check**: investigations matched to the traffic (paid: account, budget, rejected ads; organic: rankings and indexing; referral and email links; AI assistants; direct: test the forms), confirm a spike before moving budget, follow up a new source, run the check weekly.
+7. **notes** and **closing**: "Next: check the *Lookalike* campaign today. It ran 84% below its usual pace."
 
 ## Voice guidance
 
-Urgent but calm. Distinguish "investigation needed" from "proven problem". Never blame a channel without data.
-
-## What never changes
-
-- Report uses the shared two-tone card language across every container.
-- Every title has at most ONE `*word*` italic accent, rendered as italic brand-primary.
-- Never invent new section types per report — stick to the 10 in `template-schema.md`.
-- After delivering the HTML, offer PDF / PPTX / CSV as a one-line follow-up (see `SKILL.md` Rule 2).
+Urgent but calm. "Investigate", not "broken": the report flags where to look, never blames a channel without proof. When nothing moved, say so plainly and stop.

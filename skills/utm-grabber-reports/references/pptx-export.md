@@ -1,92 +1,47 @@
-# PowerPoint Export
+# PowerPoint export
 
-Every report in this skill produces HTML + PDF by default. Customers often also want a `.pptx` so they can drop a specific slide into a larger deck, edit numbers in-place, or brand-customize further. This reference explains when and how to offer a PPTX export alongside the default outputs.
+Customers want a `.pptx` to present, to paste slides into a bigger deck, or to edit copy before sharing. The skill builds a native, editable deck from the same summary as the HTML.
 
-## When to offer PPTX
+## When to offer
 
-Automatically offer PPTX export at the end of every report that produces slide-based output (the 15 slide-deck reports — not Q&A, not the UTM Generator, not the Lead Quality Scorer's ranked-table output).
+After any report, one line: "Want this as a PowerPoint deck?" Build it unprompted only when the request asked for it ("run the monthly as a pptx", "I need slides for Monday").
 
-Suggestion line to append at the end of the response:
+Trigger phrases: "export as pptx", "PowerPoint version", "slides", "a deck", "for my presentation", `/pptx`. They apply to the most recent report; reuse its `summary` (no new data pull).
 
-> Want this as a PowerPoint too? I can also save it as a `.pptx` — just say "export as pptx" or "give me the PowerPoint version."
+## How
 
-Don't generate the PPTX automatically. It takes noticeably longer than the HTML/PDF path, and most customers are fine with the PDF. Offer; don't impose.
+```python
+from build_report import build_report
+build_report(summary, "/mnt/user-data/outputs/monthly-2026-10-05.pptx", theme=theme)
+```
 
-## The trigger phrases
+Do NOT use a generic PowerPoint skill and do NOT screenshot the HTML. The engine already builds the deck natively:
 
-Any of these should trigger a PPTX conversion of the most recently generated report:
-- "export as pptx"
-- "give me the PowerPoint"
-- "PowerPoint version"
-- "also save as pptx"
-- "save as pptx too"
-- "I need a pptx"
-- "/pptx" (shortcut)
-
-If the user asks for PPTX at the START of a request (e.g., "run the monthly review as a pptx"), generate both HTML/PDF AND PPTX together rather than producing HTML first and converting.
-
-## How to generate it
-
-Use the existing `pptx` skill available in the environment. Read `/mnt/skills/public/pptx/SKILL.md` before generating your first PPTX in any conversation — it has the build instructions.
-
-The conversion is NOT "render the HTML and export as pptx." Instead, reconstruct the report as a proper PowerPoint deck using the pptx skill's native slide-building tools. This produces a real editable PPTX with native shapes, real text fields, and embedded charts — not screenshots of HTML.
-
-### The correspondence
-
-Each of the 10 slide types in the HTML template has a PPTX equivalent:
-
-| HTML slide | PPTX slide |
+| Report section | Slide |
 |---|---|
-| Cover | Title slide layout with custom typography |
-| KPI strip + headline | 4 stat cards on the top, insight block below |
-| Chart + insight (2-col) | Chart on left, text box on right |
-| Full-width chart + 3 stats | Chart on top, three text boxes below |
-| Two-column profile | Chart + data table |
-| Comparison bars | Grouped/stacked bar chart |
-| Recommendations grid | 2x2 grid of text boxes |
-| Closing | Title slide with CTA |
+| title-block | Cover (Studio: brand-color cover; Boardroom: dark with a brand-tinted gradient; Ledger: crisp rule; Classic: serif title with mono kicker) |
+| stat-strip (+ the insight right after it) | "At a glance": KPI cards with deltas and sparklines, headline as the title |
+| section-header | Becomes the title of the next slide |
+| chart-insight / chart | Native chart in a card, insight panel beside it |
+| ranked-list | Native table with in-cell bars and pills; past 11 rows it splits evenly across extra slides |
+| funnel / flow / heatmap / matrix | Vector shapes matching the HTML geometry |
+| comparison / callouts / scorecard / timeline | Purpose-built slides |
+| recommendations | Numbered action cards (Ledger: an action list) |
+| notes | Small print at the foot of the closing slide, or its own final slide when long |
+| closing | Summary slide: the next step, key numbers, recap bullets |
 
-The content is identical — same data, same narrative, same design intent — just rendered using PowerPoint-native elements instead of HTML/CSS.
+## Fonts
 
-## Brand fidelity
+The theme's fonts are embedded in the file. PowerPoint (Mac and Windows) shows them exactly. Google Slides maps them by name (they are all Google Fonts). Keynote ignores embedded fonts and substitutes Helvetica: the deck stays tidy (layouts keep room for the wider fallback) but looks plainer. If a Keynote user asks, offer the theme's font files to install (double-click, Install).
 
-The PPTX should use the customer's active brand profile (same as the HTML does):
+## Speaker notes
 
-1. Load the active brand profile from Claude memory (same way the HTML renderer does).
-2. Apply `colors.primary` to chart series, accent elements, and callout rules.
-3. Apply `colors.ink` and `colors.surface` to text and backgrounds.
-4. Insert the `logo` as an image on the cover and (if inline style) on every slide footer.
-5. Match fonts approximately — PowerPoint doesn't have access to the same Google Fonts, so use the closest system match:
-   - Instrument Serif → Cambria or Garamond
-   - Geist → Segoe UI or Calibri
-   - Geist Mono → Consolas or Courier New
-
-Note the font substitution in a small line on the cover: "Fonts may differ from online version."
+Off by default: Keynote refuses decks that contain notes pages. If the user presents from PowerPoint or Google Slides and wants talking points, set `summary["meta"]["speaker_notes"] = True` before building.
 
 ## Output conventions
 
-- Save to `/mnt/user-data/outputs/{report-name}-{YYYY-MM-DD}.pptx` — same basename as the HTML and PDF, different extension.
-- Present all three files via `present_files` so the customer sees HTML, PDF, and PPTX as download options.
-
-## When PPTX doesn't make sense
-
-Three reports are NOT good PPTX candidates:
-- **Q&A answers** — too small and conversational for a deck format.
-- **UTM Template Generator** — the output is a code block, not slides.
-- **Lead Quality Scorer** — the output is a ranked table; export as CSV/XLSX instead of PPTX.
-
-For these, if the user asks "can I get this as PowerPoint?", respond:
-
-> This output isn't really a deck — it's [a single answer / a table / a code block]. Want me to export it as [Excel / plain text / copy-ready format] instead?
+Same basename as the HTML and PDF, `.pptx` extension, in `/mnt/user-data/outputs/`. Present with `present_files`.
 
 ## Customer-facing phrasing
 
-When offering or delivering PPTX, keep it brief:
-
-**Offering:**
-> Want this as a PowerPoint too? Just ask.
-
-**Delivering:**
-> Here's the `.pptx` version. Editable slides, your brand applied. Fonts will render in whatever your PowerPoint has installed — I've used closest matches to the online version.
-
-Don't over-explain the font substitution or walk through the conversion — the customer cares about the output, not the mechanism.
+"Here's the deck. Every chart and number is editable." Never mention python-pptx, XML, embedding or fonts unless the user asks.

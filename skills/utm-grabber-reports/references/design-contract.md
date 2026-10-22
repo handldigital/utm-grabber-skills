@@ -1,8 +1,27 @@
-# Design Contract — v0.8.0
+# Design Contract (v2.0)
+
+**v2 has four themes.** The rules in "Shared by every theme" apply to all of them. Everything after that heading ("The v1 contract, now the Classic theme") is the original v1 contract, kept word for word because the `classic` theme reproduces it exactly. Theme details: `references/themes.md`. Section and chart types: `references/report-schema.md`.
+
+## Shared by every theme
+
+1. **One engine.** Every report renders through `scripts/build_report.py`. No hand-written HTML, no per-report templates, no new section types.
+2. **One accent per title.** Exactly one `*word*` per title, on the meaningful noun or the key figure. Never a year, date or generic adjective.
+3. **No em dashes** anywhere in report text. Colons, commas or periods instead.
+4. **Outcome-first headlines** and **data-driven closing titles** ("Next: feed *Google*. It sent 29% of leads.").
+5. **Brand color in typography and data, not decoration.** No decorative stripes or accent bars. (Studio's brand-color cover is the one deliberate exception: it is the theme's signature.)
+6. **Charts:** bars at most 24px thick with a rounded data end, 2px lines, hairline solid gridlines, no dual axes, legends for 2+ series, selective direct labels, text in text colors (never the series color), at most 6 colors (extra series fold into "Other").
+7. **Color is never the only signal.** Deltas carry arrows and words; statuses carry icons and words.
+8. **Every number fits.** Values auto-fit their tiles; long labels wrap or ellipsize, never clip.
+9. **The sibling test:** any two reports in the same theme must look like they came from the same designer in the same week.
+
+---
+
+# The v1 contract, now the Classic theme
+
 
 **Read this before building ANY report. Every rule here is mandatory.**
 
-The skill produces reports with one visual language shared across every report type. Monthly review, weekly summary, hygiene audit, campaign leaderboard, forecast, lead profile, anomaly detector — all 18 reports look like they came from the same designer, in the same week, for the same client. If two reports are opened side-by-side and feel like they were made by different hands, the contract was violated.
+The skill produces reports with one visual language shared across every report type. Monthly review, weekly summary, hygiene audit, campaign leaderboard, forecast, lead profile, anomaly detector: all 30 reports look like they came from the same designer, in the same week, for the same client. If two reports are opened side-by-side and feel like they were made by different hands, the contract was violated.
 
 ## Architecture: one template, many reports
 

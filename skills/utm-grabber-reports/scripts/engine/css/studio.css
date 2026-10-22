@@ -1,0 +1,149 @@
+/* ==========================================================================
+   STUDIO: bright, friendly, client-facing.
+   The memorable thing: the brand-color cover and plain-English changes.
+   Everything else stays quiet: white panels, hairlines, no shadows.
+   ========================================================================== */
+body{font-size:16px}
+.rp{padding-top:28px}
+.rp-top{margin-bottom:20px}
+.logo-text{font-family:var(--f-display);font-weight:700;font-size:21px;letter-spacing:-.02em}
+
+/* cover */
+.s-title{background:var(--brand-fill);color:var(--on-brand);border-radius:28px;padding:56px 56px 48px;overflow:hidden}
+.s-title .t-top{gap:8px 10px;margin-bottom:26px}
+.t-report,.t-period{font-size:14px;font-weight:500;padding:6px 14px;border-radius:999px;color:var(--on-brand);
+  background:color-mix(in srgb,var(--on-brand) 14%,transparent)}
+.t-period{background:transparent;border:1px solid color-mix(in srgb,var(--on-brand) 32%,transparent)}
+.s-title .h1{font-family:var(--f-display);font-weight:500;font-size:60px;line-height:1.02;letter-spacing:-.03em;max-width:17ch;color:var(--on-brand)}
+.s-title .acc{color:var(--on-brand);font-weight:700}
+.s-title .dek{color:var(--on-brand-2);font-size:20px;margin-top:20px;max-width:56ch}
+.s-title .facts{margin-top:30px;gap:12px 34px}
+.s-title .fact dt{color:var(--on-brand-2)}
+.s-title .fact dd{color:var(--on-brand)}
+.s-title .fact-plain dd{color:var(--on-brand-2)}
+.s-title .sources{margin-top:28px}
+.s-title .src{background:color-mix(in srgb,var(--on-brand) 10%,transparent);border-color:color-mix(in srgb,var(--on-brand) 22%,transparent)}
+.s-title .src-name{color:var(--on-brand)}
+.s-title .src-detail{color:var(--on-brand-2)}
+.s-title .src i{box-shadow:0 0 0 2px color-mix(in srgb,var(--on-brand) 55%,transparent)}
+.ch-cover .ch-body>.s-title+.s{margin-top:18px}
+
+/* KPIs */
+.kpi{border-radius:20px;padding:22px 22px 18px}
+.kpi-label{font-size:14px;color:var(--ink2);font-weight:500}
+.kpi-value{font-family:var(--f-numeral);font-weight:700;--fs:46px;letter-spacing:-.035em;margin-top:8px}
+.delta{display:inline-flex;align-self:flex-start;align-items:flex-start;flex-wrap:nowrap;gap:6px;font-size:13px;font-weight:600;
+  padding:5px 12px 5px 9px;border-radius:14px;margin-top:12px;line-height:1.35}
+.delta .arw{font-size:13px;font-weight:700}
+.delta .dm{white-space:nowrap}
+.delta .dvs{display:inline-block;font-weight:500}
+@media (min-width:1001px){.s-kpis.n6{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.delta.good{background:var(--good-soft)}
+.delta.bad{background:var(--bad-soft)}
+.delta.flat,.delta.neutral{background:var(--panel2)}
+.kpi-spark{margin-top:14px}
+
+/* hero */
+.s-hero{border-radius:24px;background:var(--soft);border:none}
+.hero-value{font-weight:700;letter-spacing:-.045em;color:var(--brand-ink)}
+.s-hero .kicker{font-size:15px;color:var(--ink2)}
+
+/* section heads */
+.chapter{margin-top:72px}
+.s-head{margin-bottom:24px}
+.sh-num{display:none}
+.sh-kicker{font-size:14px;font-weight:600;color:var(--brand-ink)}
+.s-head .h2{font-size:34px;font-weight:500;letter-spacing:-.025em;max-width:26ch}
+.s-head .acc{font-weight:700}
+.sh-dek{font-size:16px}
+
+/* figures */
+.fig,.ins,.s-funnel,.s-compare,.s-timeline,.s-score,.tbl-wrap,.rec,.co,.s-insight{border-radius:20px}
+.fig{padding:26px 26px 22px}
+.fig-title{font-weight:500;font-size:18px;letter-spacing:-.01em}
+.ins{background:var(--soft);border:none;padding:28px}
+.ins .kicker{color:var(--brand-ink);font-weight:600}
+.ins .h3{font-family:var(--f-display);font-weight:500;font-size:23px;letter-spacing:-.02em;line-height:1.2}
+.ins .acc{font-weight:700}
+.ins-body p{color:var(--ink2)}
+.caption{font-size:13px}
+.ct-center{font-family:var(--f-numeral);font-weight:700;letter-spacing:-.03em}
+.bl-track{height:16px;border-radius:999px}
+.bl-fill{border-radius:999px}
+.bl-label{font-size:14.5px}
+.legend i{border-radius:50%}
+
+/* tables */
+.tbl th{background:var(--panel);color:var(--ink3);font-weight:500;font-size:12.5px;padding:14px 18px}
+.tbl td{padding:14px 18px}
+.tbl td.c-number{font-family:var(--f-numeral);font-weight:500;font-size:16px}
+.tbl td.c-rank{font-family:var(--f-numeral);font-weight:500}
+.tbl tfoot td{background:var(--soft);border-top:none}
+.cb-track{height:8px;border-radius:999px}
+.cb-fill{border-radius:999px}
+
+/* recommendations: a numbered plan */
+.recs{counter-reset:rec}
+.rec{border:1px solid var(--line-css);position:relative;padding-left:0}
+.rec-top{padding:22px 24px 0 74px;position:relative}
+.rec-top::before{counter-increment:rec;content:counter(rec);position:absolute;left:22px;top:20px;width:36px;height:36px;border-radius:50%;
+  background:var(--brand-fill);color:var(--on-brand);font-family:var(--f-numeral);font-weight:700;font-size:16px;
+  display:flex;align-items:center;justify-content:center}
+.rec-label{color:var(--ink3);font-weight:500;font-size:12.5px;margin-bottom:4px}
+.rec .h3{font-family:var(--f-display);font-weight:500;font-size:19px;letter-spacing:-.015em}
+.rec .acc{font-weight:700}
+.rec-body{padding:8px 24px 22px 74px}
+
+/* insight */
+.s-insight{background:var(--soft);border:none;padding:32px 34px}
+.s-insight .h3{font-weight:500;font-size:27px;letter-spacing:-.025em;line-height:1.18}
+.s-insight .acc{font-weight:700}
+.s-insight .kicker{color:var(--brand-ink);font-weight:600;font-size:14px}
+.s-insight.tone-good{background:var(--good-soft)}
+.s-insight.tone-bad{background:var(--bad-soft)}
+.s-insight.tone-warn{background:var(--warn-soft)}
+
+/* callouts */
+.co{padding:22px}
+.co-value{font-weight:700;letter-spacing:-.03em;--fs:36px}
+.co-title{font-weight:500}
+
+/* funnel */
+.fn-fill{border-radius:999px}
+.fn-bar{height:42px}
+.fn-val{font-weight:700;letter-spacing:-.025em}
+
+/* comparison */
+.cmp-side{font-weight:500}
+.cmp-bar{border-radius:999px;height:12px}
+.cmp-a .cmp-bar span{border-radius:999px 0 0 999px}
+.cmp-b .cmp-bar span{border-radius:0 999px 999px 0}
+
+/* timeline + scorecard */
+.tl-dot{border-color:var(--brand-fill)}
+.tl-ev.k-conversion .tl-dot,.tl-ev.k-purchase .tl-dot{background:var(--brand-fill)}
+.sc-value{font-weight:700;letter-spacing:-.02em}
+.tag{border-radius:999px}
+
+/* closing */
+.s-closing{background:var(--soft);border:none;border-radius:28px;padding:44px}
+.s-closing .kicker{color:var(--brand-ink);font-weight:600;font-size:14px}
+.cl-title{font-weight:500;font-size:36px;letter-spacing:-.03em}
+.cl-title .acc{font-weight:700}
+.cl-stats div{border-top-color:color-mix(in srgb,var(--brand) 22%,transparent)}
+.cl-stats dd{font-weight:700;letter-spacing:-.03em}
+.cl-bullets li::before{border-radius:50%;background:var(--brand-fill)}
+
+.rp-foot{border-top:none;padding-top:0;margin-top:48px}
+
+@media (max-width:640px){
+  .s-title{border-radius:22px;padding:30px 22px 26px}
+  .s-title .h1{font-size:36px}
+  .s-title .dek{font-size:17px}
+  .s-head .h2{font-size:26px}
+  .kpi{border-radius:16px}
+  .kpi-value{--fs:32px}
+  .rec-top,.rec-body{padding-left:66px;padding-right:18px}
+  .s-closing{padding:28px 20px}
+  .cl-title{font-size:27px}
+}

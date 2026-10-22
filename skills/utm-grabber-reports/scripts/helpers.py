@@ -80,40 +80,30 @@ def _extract_field_labels(text):
     return val if isinstance(val, dict) else {}
 
 
-def normalize_mcp_entries(entries, field_labels):
-    """Translate v3.1.20 raw entries into the named-key shape recipes expect.
+def normalize_mcp_entries(entries, field_labels, field_map=None):
+    """Translate raw get_entries entries into the named-key shape recipes expect.
 
-    The paginated MCP keys UTM/HANDL fields by numeric form-field id ("3": "Google")
-    and carries a separate field_labels map ({form_id: {"3": "utm_source (HandL)", ...}}).
-    This rewrites each entry's keys to the human label and adds the canonical
-    'Date Created' / 'Form ID' / 'Source URL' aliases the helpers read.
-
-    Safe no-op on already-named entries (demo data, pre-3.1.20 results): with no
-    field_labels and no lowercase metadata keys, entries pass through unchanged.
+    Entries arrive the way each form plugin stores them: Gravity Forms flat and
+    keyed by numeric field id ("3": "Google") with a field_labels map, most other
+    plugins nested under `fields` with a `date`. This applies field_labels,
+    flattens `fields`, and fills the canonical names from
+    references/data-dictionary.md ('Date Created', 'utm_source (HandL)',
+    'utm_source (first touch, HandL)', 'gclid (HandL)', 'Email'...) using the
+    site's field map (scripts/field_map.py), or the automatic draft when none is
+    saved. Values an entry already has under a canonical name are kept, so
+    already-named data (demo data, pre-3.1.20 results) passes through unchanged.
     """
-    out = []
-    for e in entries:
-        fid = str(e.get('form_id', '') or '')
-        labels = field_labels.get(fid, {}) if field_labels else {}
-        ne = {}
-        for k, v in e.items():
-            ne[labels.get(k, k)] = v
-        if e.get('date_created') and 'Date Created' not in ne:
-            ne['Date Created'] = e['date_created']
-        if fid and 'Form ID' not in ne:
-            ne['Form ID'] = fid
-        if e.get('source_url') and 'Source URL' not in ne:
-            ne['Source URL'] = e['source_url']
-        out.append(ne)
-    return out
+    from field_map import apply
+    return apply(entries, field_labels, field_map)
 
 
-def load_entries(filepaths, normalize=True):
+def load_entries(filepaths, normalize=True, field_map=None):
     """Load + concatenate entries from one or more get_entries page files.
 
     Pass a single path or a list of page files (page 1, page 2, ...). field_labels
-    are taken from the first page that carries them. Returns normalized entries
-    (named keys + canonical aliases) unless normalize=False.
+    are merged across pages. Returns normalized entries (named keys + canonical
+    names, see normalize_mcp_entries) unless normalize=False. Pass the site's
+    saved field_map (field_map.from_memory) so every run reads the same fields.
     """
     if isinstance(filepaths, str):
         filepaths = [filepaths]
@@ -127,7 +117,7 @@ def load_entries(filepaths, normalize=True):
         for form_id, mapping in _extract_field_labels(text).items():
             field_labels.setdefault(form_id, {}).update(mapping)
         all_entries.extend(_extract_entries_array(text))
-    return normalize_mcp_entries(all_entries, field_labels) if normalize else all_entries
+    return normalize_mcp_entries(all_entries, field_labels, field_map) if normalize else all_entries
 
 
 def load_entries_from_mcp_result(filepath):
@@ -154,7 +144,8 @@ def get_field(entry, *candidates, default=''):
 # Traffic source classification
 # ==============================================================
 
-PAID_MEDIUMS = {'cpc', 'ppc', 'paid', 'paid_search', 'paid_social', 'paidsocial'}
+PAID_MEDIUMS = {'cpc', 'ppc', 'paid', 'paid_search', 'paid_social', 'paidsocial', 'display', 'cpm', 'cpv',
+                'paid_video', 'paidvideo', 'paid-social', 'paid-search', 'banner', 'retargeting'}
 SOCIAL_MEDIUMS = {'social', 'organic_social'}
 EMAIL_MEDIUMS = {'email', 'newsletter', 'e-mail'}
 REFERRAL_MEDIUMS = {'referral', 'partner'}
@@ -507,9 +498,15 @@ def format_date_range(start_date_str, end_date_str):
 
 import hashlib
 import os
+import tempfile
 import time
 
-CACHE_DIR = '/home/claude/cache/mcp-entries'
+# claude.ai's sandbox has a writable /home/claude. Elsewhere (Claude Code, Codex, Cursor
+# on a Mac or PC) it can't be created, so use the system temp folder, like demo_data's cache.
+if os.path.isdir('/home/claude') and os.access('/home/claude', os.W_OK):
+    CACHE_DIR = '/home/claude/cache/mcp-entries'
+else:
+    CACHE_DIR = os.path.join(tempfile.gettempdir(), 'utm-grabber-cache', 'mcp-entries')
 INDEX_PATH = os.path.join(CACHE_DIR, '_index.json')
 CACHE_TTL_SECONDS = 14400  # 4 hours — UTM data isn't live-critical; longer TTL cuts repeat pulls
 
@@ -636,7 +633,8 @@ def _filter_entries_by_date(entries, start_date, end_date):
     return out
 
 
-def save_cached_entries(raw_mcp_result_paths, customer_domain, form_ids, start_date, end_date):
+def save_cached_entries(raw_mcp_result_paths, customer_domain, form_ids, start_date, end_date,
+                        field_map=None):
     """
     Cache a fresh MCP pull so `load_cached_superset` can reuse it later.
 
@@ -644,11 +642,12 @@ def save_cached_entries(raw_mcp_result_paths, customer_domain, form_ids, start_d
     multiple files (one per page), so all pages are concatenated + normalized via
     `load_entries` and written to ONE cache file as a JSON array of named-key
     entries. This means a later cache hit returns the WHOLE window — not just the
-    first page, which is what a naive single-file copy would have stored.
+    first page, which is what a naive single-file copy would have stored. Pass the
+    same field_map as load_entries so cached follow-ups read the same fields.
     """
     if isinstance(raw_mcp_result_paths, str):
         raw_mcp_result_paths = [raw_mcp_result_paths]
-    entries = load_entries(raw_mcp_result_paths)  # concatenated + normalized
+    entries = load_entries(raw_mcp_result_paths, field_map=field_map)  # concatenated + normalized
     target = cache_path(customer_domain, form_ids, start_date, end_date)
     with open(target, 'w') as f:
         json.dump(entries, f)

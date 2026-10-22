@@ -1,5 +1,8 @@
 # Design System
 
+> **v2 note:** this file documents the v1 design system, which is now the `classic` theme. The other three themes (studio, boardroom, ledger) are described in `references/themes.md`; shared rules are in `references/design-contract.md`.
+
+
 This file defines the visual language of every UTM Grabber attribution report. The HTML template (`templates/report-shell.html`) already implements everything here — you should rarely have to touch CSS directly. Load this file only if you need to understand *why* the template looks the way it does, or if you're adapting it for an agency white-label use case.
 
 ## The core principle

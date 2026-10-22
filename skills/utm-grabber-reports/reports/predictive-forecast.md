@@ -3,63 +3,36 @@
 ## Triggers
 
 - `/forecast`
-- `forecast`
-- `predict`
-- `next month`
-- `projected leads`
+- "forecast", "predict", "next month", "projected leads", "how many leads should we expect"
 
 ## Purpose
 
-Forecasts the next 30 days of leads based on the last 90 days of history. Answers "what should I expect next period, and where are the upside/downside risks?"
+The next 7 and 30 days of leads with a likely range, the weekly rhythm to staff for, and which channels are trending. Built for planning; it never claims more precision than the history supports.
 
-## Before you build
+## Build it
 
-1. Read `references/design-contract.md` — the two-tone house style, italic-accent rule, forbidden patterns.
-2. Read `scripts/template-schema.md` — section type reference.
-3. Read `references/rendering-pipeline.md` — MCP strategy and tool-call budgets.
+```python
+from recipes_v2 import get_recipe
+summary = get_recipe("forecast")(history, brand_profile=brand, customer_domain="acme.com")
+```
 
-The final deliverable renders via `templates/report-shell.html` (HTML default), with `scripts/build_pdf.py`, `scripts/build_pptx.py`, or `scripts/build_csv.py` available as alternative output formats offered after the HTML.
+Registry keys: `forecast`, `predictive-forecast`, `predict`.
+Signature: `build_forecast(history, brand_profile=None, customer_name=None, customer_domain="", form_label=None, compare_label=None, prepared_by=None, prepared_for=None, **kwargs)`
 
-## Data needs
-
-- Current baseline: last 90 days of entries (longer history = better forecast)
-- Aggregations: `compute_daily_volume` (for trend), `compute_channel_mix`, `compute_source_leaderboard`
-- Forecast math: rolling 30-day average × seasonality factor (day-of-week). Keep methodology simple — do not claim ML unless actual ML is used.
-
-**Prior period required:** no
-
-This report uses a single-period pull only. Do NOT run a second `get_entries` call — see `references/rendering-pipeline.md` on skipping the prior-period pull for non-delta reports.
+- `history`: UTM Grabber entries for 30 to 120 days (90 is best). Under 21 days: a short honest report with today's pace, labeled a guess.
+- Method, in plain words: a weekday pattern (each weekday's average against the overall average) times a weekly level. The level follows a straight line through the weekly totals only when that trend is bigger than 2 standard errors; otherwise it holds the last 4 weeks' average.
+- Range: about 4 in 5 outcomes (1.28 standard deviations of past weekly misses, scaled to the horizon) and never narrower than normal count noise. Numbers are rounded and always "about".
 
 ## Section order
 
-The report emits these sections, in this order:
-
-**title-block**
-: Kicker: "Predictive Forecast · Next 30 days". Title: `"Your *projected* pipeline."` Meta: baseline window, data points, confidence.
-
-**hero-number**
-: Kicker "Projected leads · next 30 days". Value: the headline forecast (e.g., "485"). Label: "±12% range based on your last 90 days of history."
-
-**chart**
-: Line chart: historical (solid, muted color) transitioning into projected (dashed or lighter, brand primary). X-axis: day index.
-
-**insight-card**
-: Kicker "What this assumes". Title: `"Your *trend* is the dominant signal."` Body: the assumptions (stable mix, no major campaign changes, day-of-week seasonality applied).
-
-**recommendations**
-: 4 what-ifs: if you increase top channel spend 20%, expect X; if top campaign fatigues, expect Y; etc. Actionable, not academic.
-
-**closing**
-: Title: `"Plan *for* the likely path."` Body: offer to re-run with specific changes.
-
+1. **title-block**: "Expect about *470 leads* in the next 30 days." Subtitle: the range, the weeks of history and the change against the last 30 days.
+2. **stat-strip**: next 7 days (weekly spark, range), next 30 days (vs the last 30), likely range (plus or minus), trend in leads a week.
+3. **01 The forecast**: actual leads for up to the last 12 weeks, then 30 forecast days (dashed) with a shaded daily band; then the weekday rhythm (busiest day only when it leads by 10%+, else weekdays vs weekends).
+4. **02 By channel**: each channel's own weekly trend, scaled so channels add up to the total: last 30 days, next 30 days, change, trend pill (Rising or Cooling only beyond noise).
+5. **03 Method**: plain-words notes on the pattern, the trend, the range and the assumptions.
+6. **04 Next steps**: plan follow-up capacity for the range, budget for a rising channel, find what is slowing a cooling one, re-run after a launch or pause.
+7. **closing**: "Next: plan for about *470 leads*. Expect 440 to 500 in the next 30 days."
 
 ## Voice guidance
 
-Humble about prediction limits. Use "projected" and "estimated" — never "will". Always give a range, never a single number without bounds.
-
-## What never changes
-
-- Report uses the shared two-tone card language across every container.
-- Every title has at most ONE `*word*` italic accent, rendered as italic brand-primary.
-- Never invent new section types per report — stick to the 10 in `template-schema.md`.
-- After delivering the HTML, offer PDF / PPTX / CSV as a one-line follow-up (see `SKILL.md` Rule 2).
+Humble about prediction. Use "about", "likely" and "expect", never "will". Always give the range with the number, and say what would break the forecast.

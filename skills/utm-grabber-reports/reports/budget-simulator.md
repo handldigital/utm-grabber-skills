@@ -9,60 +9,41 @@
 
 ## Purpose
 
-Models the lead outcome of reallocating spend between channels. Answers "what if I moved 20% from Google to Facebook — what would leads look like?"
+Models what happens to leads if you move part of the budget (or effort) from one channel or campaign to another, as an honest range. Answers "what if I moved 20% from Google to LinkedIn?"
 
-## Before you build
+## Build it
 
-1. Read `references/design-contract.md` — the two-tone house style, italic-accent rule, forbidden patterns.
-2. Read `scripts/template-schema.md` — section type reference.
-3. Read `references/rendering-pipeline.md` — MCP strategy and tool-call budgets.
+```python
+from recipes_v2 import get_recipe
+summary = get_recipe("budget-simulator")(current, {"shift_from": "google", "shift_to": "linkedin", "pct": 20},
+                                         ad_rows=ad_rows, brand_profile=brand, customer_domain="example.com")
+```
 
-The final deliverable renders via `templates/report-shell.html` (HTML default), with `scripts/build_pdf.py`, `scripts/build_pptx.py`, or `scripts/build_csv.py` available as alternative output formats offered after the HTML.
+Registry keys: `budget-simulator`, `budget`, `what-if`, `simulator`.
+Signature: `build_budget_simulator(current, scenario=None, ad_rows=None, brand_profile=None, customer_name=None, customer_domain="", compare_label=None, prepared_by=None, prepared_for=None, **kwargs)`
 
-## Data needs
+- `current`: the baseline period. 60 to 90 days gives steadier rates.
+- `scenario`: `shift_from`, `shift_to` and `pct`. Each name is matched to a campaign first, then an ad platform (`google` means Google Ads paid leads), then a utm_source. Without a scenario the two biggest channels are modeled and the subtitle says so.
+- `ad_rows` (optional): AdRow list. Used when it covers both sides of the shift.
 
-- Single period: last 90 days (for stable per-channel rates)
-- Require user to state the reallocation (can default to simulations)
-- Compute per-channel lead-per-spend rate (if spend is known) or lead-per-day baseline
-- Apply reallocation multiplier to each channel's baseline
+## The model (stated in the report)
 
-**Prior period required:** no
-
-This report uses a single-period pull only. Do NOT run a second `get_entries` call — see `references/rendering-pipeline.md` on skipping the prior-period pull for non-delta reports.
+- **No spend**: leads are assumed proportional to effort, and effort buys the same leads in both channels. The donor loses `pct` of its leads. High end: the receiver wins them all back (so the best case is flat). Low end: the receiver saturates with a square-root response.
+- **With spend**: the donor loses leads at its average cost per lead. High end: the receiver keeps today's cost per lead. Low end: square-root response, `leads x sqrt(1 + moved / current spend)`.
+- Every projection is a low to high range; the waterfall shows the middle of it.
 
 ## Section order
 
-The report emits these sections, in this order:
+1. **title-block**: verdict headline (could add, would cost, a coin flip, or at best flat), with the range. Subtitle gives both channels' leads and spend.
+2. **stat-strip**: leads today (spark), projected low end and projected high end (each with its delta vs today and the change in leads in the note), cost per lead today and after the shift when spend is known. The range is split into two KPIs so values stay short on phones.
+3. **insight-card** "The assumption": the model in plain words.
+4. **section-header 01 The scenario** + **chart-insight** (waterfall for the two channels: today, less from the donor, added in the receiver, with the shift) + **comparison** (today vs with the shift, ranges in the displays).
+5. **section-header 02 Next steps** + **recommendations**: the verdict (test, keep the budget, test a smaller shift, or connect spend first), the reverse shift when the same model says it would gain, the weekly number to track, connect spend, tag untagged leads.
+6. **notes**: baseline, how each name was matched, formulas.
+7. **closing**: next step with the break-even number.
 
-**title-block**
-: Kicker: "Budget Simulator · Last 90 days baseline". Title: `"What *if* you moved spend?"` Meta: channels modeled, baseline period, scenario.
-
-**stat-strip**
-: 3 stats: baseline leads/month, projected leads under scenario, net delta.
-
-**chart**
-: Bar-grouped: current baseline vs scenario per channel. Labels clearly say "baseline" and "scenario".
-
-**insight-card**
-: Kicker "Caveat". Title: `"This assumes *linear* scaling."` Body: explain diminishing returns, saturation, and that the sim is a first-order estimate.
-
-**ranked-list**
-: Per-channel: current leads, projected leads, delta, risk flag (high if budget moves > 30%).
-
-**recommendations**
-: 3 actions: the directional change to try first, how to test it safely in 2 weeks, what to measure to validate.
-
-**closing**
-: Title: `"Model it, then *test* it."`
-
+Fewer than 10 leads, an unknown channel, a donor with no leads, or a bad pct: a short, honest version that says what to fix.
 
 ## Voice guidance
 
-Cautious-analyst. Every projection is a guess. Always name the assumptions. Never present sim numbers without caveats.
-
-## What never changes
-
-- Report uses the shared two-tone card language across every container.
-- Every title has at most ONE `*word*` italic accent, rendered as italic brand-primary.
-- Never invent new section types per report — stick to the 10 in `template-schema.md`.
-- After delivering the HTML, offer PDF / PPTX / CSV as a one-line follow-up (see `SKILL.md` Rule 2).
+Cautious analyst. Every projection is a range and every assumption is named. Lead with break-even: how many leads the receiving channel must add to justify the move.

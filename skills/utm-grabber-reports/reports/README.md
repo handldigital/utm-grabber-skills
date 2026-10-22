@@ -1,57 +1,60 @@
-# Report specs · v0.8 section-based architecture
+# Report specs (v2)
 
-Every report in this directory follows the same architecture: it reads live UTM Grabber data, computes aggregations via `scripts/helpers.py`, emits a `sections` array matching `scripts/template-schema.md`, and renders through `templates/report-shell.html` (HTML), `scripts/build_pdf.py` (PDF), `scripts/build_pptx.py` (PPTX), or `scripts/build_csv.py` (CSV).
+Every report: live data in, a recipe builds the summary, `build_report()` writes HTML, PDF or PowerPoint in any of the four themes.
 
-## Shared pattern
+```python
+from recipes_v2 import get_recipe
+from build_report import build_report
+summary = get_recipe("monthly")(leads, prior, brand_profile=brand, customer_domain="acme.com")
+build_report(summary, "/mnt/user-data/outputs/monthly-2026-10-05.html", theme="studio")
+```
 
-Every report spec in this directory includes:
+Each spec in this folder states:
+1. **Purpose**: the question the report answers and when to run it.
+2. **Data**: what to pull (UTM Grabber window, prior window, other connectors) and the recipe signature.
+3. **Sections**: the order the recipe produces.
+4. **Voice**: what the headline and recommendations should emphasize.
 
-1. **Purpose** — one or two sentences describing when to run this report and what question it answers.
-2. **Data needs** — which MCP fields are required, which aggregation helpers to use, whether a prior period is needed.
-3. **Section order** — the `sections` array structure (which section types in which order, with example content).
-4. **Voice guidance** — recommended headline patterns, what to emphasize in insight cards, what tone to keep in recommendations.
+Before changing or extending a report, read `references/report-schema.md` (section types and writing rules) and `references/themes.md`.
 
-Claude reads the relevant report spec after routing from SKILL.md's decision tree. The spec tells it the *shape* of the output; `design-contract.md` governs the *look*. Both are mandatory.
+## Index
 
-## Before building any report
+**Core performance**
+- `monthly-performance-review.md` (`monthly`): the 30-day story, the flagship
+- `weekly-executive-summary.md` (`weekly`): the 7-day one-pager
+- `daily-pulse.md` (`daily-pulse`): yesterday vs the 7-day average, one page
+- `quarterly-business-review.md` (`qbr`): the quarter vs the previous one, board-ready
+- `top-campaign-leaderboard.md` (`leaderboard`): every campaign ranked, scale vs fix map
+- `campaign-deep-dive.md` (`campaign-deep-dive`): one campaign end to end, with a verdict
+- `paid-vs-organic.md` (`paid-vs-organic`): the fundamental split
+- `anomaly-detector.md` (`anomaly`): what changed and what broke
+- `predictive-forecast.md` (`forecast`): next week and month with a range
+- `side-by-side-comparison.md` (`side-by-side`): any two segments compared
+- `agency-client-rollup.md` (`agency-rollup`): every client on one page
 
-1. Read `references/design-contract.md` — defines the two-tone house style, italic-accent rule, color tokens, forbidden patterns.
-2. Read `scripts/template-schema.md` — defines every section type's expected fields.
-3. Read the relevant report spec (this directory).
-4. Read `references/rendering-pipeline.md` — defines the MCP pull strategy, caching, and tool-call budgets.
+**Leads, forms and tracking**
+- `utm-hygiene-audit.md` (`audit`): where attribution leaks, in fix order
+- `lead-quality-scorer.md` (`lead-scorer`): who to call first and why
+- `lead-profile-enrichment.md` (`lead-profile`): one lead's full journey
+- `form-performance.md` (`form-performance`): every form, including dormant ones
+- `landing-page-performance.md` (`landing-page`): pages that win and pages that leak
+- `source-to-crm-mapping.md` (`source-to-crm`): sources per declared CRM
+- `lead-timing.md` (`lead-timing`): the day x hour map of when leads arrive
 
-## Output formats
+**Paid media, revenue and journeys**
+- `ad-creative-performance.md` (`ad-creative`): utm_content winners and fatigue
+- `keyword-performance.md` (`keyword`): utm_term by intent
+- `budget-simulator.md` (`budget-simulator`): what-if budget shifts with a range
+- `revenue-by-source.md` (`revenue`): WooCommerce revenue by channel and campaign
+- `ai-assistant-referrals.md` (`ai-referrals`): leads from ChatGPT, Perplexity, Gemini, Claude, Copilot
+- `customer-journey.md` (`journey`): first touch to last touch, fair credit per channel
 
-Every report spec produces an HTML deliverable by default. After delivering HTML, offer PDF/PPTX/CSV as one-line follow-ups per `SKILL.md` Rule 2.
+**Cross-platform** (see `references/connectors.md`)
+- `full-funnel.md` (`full-funnel`): visits to leads to customers to revenue
+- `true-roas.md` (`true-roas`): which ads brought customers, cost per customer, ROAS
+- `conversion-truth.md` (`conversion-truth`): what ad platforms report vs real leads
+- `traffic-to-lead.md` (`traffic-to-lead`): traffic that never converts
+- `pipeline-by-source.md` (`pipeline`): close rate and revenue by first touch
+- `wasted-spend.md` (`wasted-spend`): spend that produced no leads
 
-## Spec index
-
-**Period-over-period reports** (need prior-period pull for deltas):
-- `monthly-performance-review.md` — the 30-day executive summary
-- `weekly-executive-summary.md` — the 7-day one-pager
-- `predictive-forecast.md` — baseline-driven lead forecast for next period
-
-**Audit and quality reports** (single period):
-- `utm-hygiene-audit.md` — attribution leak detection
-- `anomaly-detector.md` — channel-level anomaly surfacing
-- `lead-quality-scorer.md` — declared-intent ranking across all leads
-
-**Ranked leaderboards** (single period, feature ranked-list):
-- `top-campaign-leaderboard.md` — best-performing campaigns
-- `landing-page-performance.md` — attribution by URL
-- `form-performance.md` — submission rates by form
-- `ad-creative-performance.md` — by utm_content
-- `keyword-performance.md` — by utm_term
-- `source-to-crm-mapping.md` — source × CRM matrix
-
-**Deep dives and profiles** (subject-specific):
-- `campaign-deep-dive.md` — all leads + stats for one campaign
-- `lead-profile-enrichment.md` — single-lead attribution history
-
-**Comparisons and what-ifs**:
-- `side-by-side-comparison.md` — two entities (campaigns, sources, periods) compared
-- `paid-vs-organic.md` — the fundamental split
-- `budget-simulator.md` — what-if spend reallocation
-
-**Agency workflows**:
-- `agency-client-rollup.md` — portfolio view across all brand profiles
+The v1 specs' recipes (`scripts/report_recipes.py`) remain for old summaries; new work uses `recipes_v2`.

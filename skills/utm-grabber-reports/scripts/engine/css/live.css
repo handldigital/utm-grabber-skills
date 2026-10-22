@@ -1,0 +1,45 @@
+/* Live dashboard: the window switch, refresh and live status in the header,
+   plus the message line under it. Everything else is the dashboard layout. */
+.lv .d-top{gap:10px 20px}
+.lv-ctl{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
+.lv-tabs{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--panel2);border:1px solid var(--line-css)}
+.lv-tab{font:inherit;font-size:12.5px;font-weight:500;color:var(--ink2);background:transparent;border:0;border-radius:999px;
+  padding:5px 11px;cursor:pointer;white-space:nowrap}
+.lv-tab[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line-css)}
+.lv-refresh{font:inherit;font-size:12.5px;font-weight:600;color:var(--brand-ink);background:var(--panel);
+  border:1px solid var(--line-css);border-radius:999px;padding:5px 13px;cursor:pointer}
+.lv-status{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink3);white-space:nowrap}
+.lv-status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ink3);flex:none}
+.lv-status.is-live::before{background:var(--good)}
+.lv-status.is-busy::before{background:var(--warn)}
+.lv-tab:focus-visible,.lv-refresh:focus-visible{outline:2px solid var(--brand-ink);outline-offset:2px}
+.lv-msg{margin:-4px 0 16px;padding:10px 14px;border-radius:var(--r-sm);font-size:13.5px;line-height:1.45;
+  background:var(--panel2);color:var(--ink2);border:1px solid var(--line-css);max-width:110ch}
+.lv-msg.tone-warn{background:var(--warn-soft);color:var(--ink);border-color:transparent}
+.lv-empty{font-size:13.5px;color:var(--ink3);padding:20px 0}
+.lv-rank{color:var(--ink3);font-variant-numeric:tabular-nums}
+.lv-mono{font-family:var(--f-mono);font-size:12px;color:var(--ink2);overflow-wrap:anywhere}
+.lv .panel .tbl td.c-text{white-space:nowrap}
+
+/* Studio: the controls sit on the brand-color bar */
+.lv[data-k="studio"] .lv-tabs{background:color-mix(in srgb,var(--on-brand) 12%,transparent);border-color:color-mix(in srgb,var(--on-brand) 22%,transparent)}
+.lv[data-k="studio"] .lv-tab{color:var(--on-brand)}
+.lv[data-k="studio"] .lv-tab[aria-pressed="true"]{background:var(--on-brand);color:var(--brand-fill);box-shadow:none}
+.lv[data-k="studio"] .lv-refresh{background:transparent;color:var(--on-brand);border-color:color-mix(in srgb,var(--on-brand) 38%,transparent)}
+.lv[data-k="studio"] .lv-status{color:var(--on-brand-2)}
+.lv[data-k="studio"] .lv-status::before{background:var(--on-brand-2)}
+.lv[data-k="studio"] .lv-status.is-live::before{background:var(--on-brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--on-brand) 25%,transparent)}
+.lv[data-k="studio"] .lv-tab:focus-visible,.lv[data-k="studio"] .lv-refresh:focus-visible{outline-color:var(--on-brand)}
+
+/* Classic and Ledger: square controls */
+.lv[data-k="classic"] .lv-tabs,.lv[data-k="classic"] .lv-tab,.lv[data-k="classic"] .lv-refresh,
+.lv[data-k="ledger"] .lv-tabs,.lv[data-k="ledger"] .lv-tab,.lv[data-k="ledger"] .lv-refresh{border-radius:var(--r-sm)}
+.lv[data-k="classic"] .lv-tab,.lv[data-k="classic"] .lv-refresh,.lv[data-k="classic"] .lv-status{font-family:var(--f-label);font-size:11px;
+  text-transform:uppercase;letter-spacing:.1em}
+.lv[data-k="ledger"] .lv-tab,.lv[data-k="ledger"] .lv-refresh,.lv[data-k="ledger"] .lv-status{font-family:var(--f-label)}
+
+@media (max-width:640px){
+  .lv-ctl{width:100%}
+  .lv-tabs{flex:1 1 100%;justify-content:space-between}
+  .lv-tab{flex:1;padding:6px 4px}
+}

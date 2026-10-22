@@ -1,0 +1,184 @@
+/* ==========================================================================
+   DASHBOARD layout (the screen default). One screen shows the whole picture:
+   a slim header with the headline and the next step, the KPI band, then every
+   chart, table and insight as a panel in a 12-column grid. Each theme keeps
+   its type, color and shapes; {theme}.dash.css adds the theme's accents.
+   Print and PDF keep the document layout (print.css).
+   ========================================================================== */
+.rp.dash{max-width:1440px;padding:18px 24px 44px}
+
+/* ---------- header ---------- */
+.d-top{display:flex;align-items:center;justify-content:space-between;gap:10px 20px;flex-wrap:wrap;padding:8px 0 14px}
+.d-id{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;min-width:0}
+.d-logo{display:flex;align-items:center;margin-right:4px}
+.d-logo .logo-img{max-height:28px;max-width:180px}
+.d-logo .logo-text{font-size:18px}
+.d-report{font-size:13.5px;font-weight:600;color:var(--brand-ink)}
+.d-period{font-size:13.5px;color:var(--ink2)}
+.d-top .sources{margin:0;gap:6px}
+.d-top .src{padding:3px 10px 3px 8px;font-size:12px;gap:6px}
+.d-top .src i{width:7px;height:7px}
+
+.d-hero{padding:4px 0 18px}
+.d-hero.has-next{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,400px);gap:14px 28px;align-items:start}
+.d-h1{font-family:var(--f-display);font-size:28px;line-height:1.16;letter-spacing:-.015em;font-weight:600;max-width:46ch;
+  text-wrap:balance;overflow-wrap:anywhere}
+.d-dek{font-size:15px;line-height:1.5;color:var(--ink2);margin-top:8px;max-width:96ch}
+.d-facts{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:8px;font-size:12.5px;color:var(--ink3)}
+.d-next{background:var(--panel);border:1px solid var(--line-css);border-left:3px solid var(--brand);border-radius:var(--r);padding:14px 16px}
+.d-next-list{margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft);display:grid;gap:5px}
+.d-next-list li{font-size:13px;line-height:1.45;color:var(--ink2);padding-left:14px;position:relative}
+.d-next-list li::before{content:"";position:absolute;left:1px;top:.55em;width:6px;height:6px;border-radius:2px;background:var(--s1)}
+.panel.has-next .d-next{margin-top:auto}
+.panel.has-next>.s{margin-bottom:16px}
+/* a wide takeaway puts the next step beside it instead of under it */
+.panel.p-insight-card.has-next.span-8,.panel.p-insight-card.has-next.span-9,.panel.p-insight-card.has-next.span-10,
+.panel.p-insight-card.has-next.span-11,.panel.p-insight-card.has-next.span-12{display:grid;
+  grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px 24px;align-items:start}
+.panel.p-insight-card.has-next.span-12>.s,.panel.p-insight-card.has-next.span-8>.s{margin-bottom:0}
+.d-next-k{font-size:12px;font-weight:600;color:var(--brand-ink);margin-bottom:4px}
+.d-next-t{font-family:var(--f-display);font-size:16px;line-height:1.32;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+
+/* ---------- KPI band ---------- */
+.d-kpis{gap:12px;margin-bottom:16px}
+.d-kpis.n5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.d-kpis.n6{grid-template-columns:repeat(6,minmax(0,1fr))}
+.d-kpis .kpi{padding:14px 16px 12px}
+.d-kpis .kpi-label{font-size:12.5px}
+.d-kpis .kpi-value{--fs:30px;margin-top:6px}
+.d-kpis .delta{font-size:12px;margin-top:6px}
+.d-kpis .kpi-spark{margin-top:8px;height:26px}
+.d-kpis .kpi-spark .spark{height:26px}
+.d-kpis .kpi-note{font-size:12px;margin-top:4px;line-height:1.4}
+.d-kpis.lbl2 .kpi-head{min-height:0}
+
+/* ---------- panel grid ---------- */
+.d-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;grid-auto-flow:row dense}
+.panel{grid-column:span 6;min-width:0;background:var(--panel);border:1px solid var(--line-css);border-radius:var(--r);
+  padding:18px 20px 16px;display:flex;flex-direction:column}
+.span-1{grid-column:span 1}.span-2{grid-column:span 2}.span-3{grid-column:span 3}.span-4{grid-column:span 4}
+.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-7{grid-column:span 7}.span-8{grid-column:span 8}
+.span-9{grid-column:span 9}.span-10{grid-column:span 10}.span-11{grid-column:span 11}.span-12{grid-column:span 12}
+.p-head{margin-bottom:12px}
+.p-head-sm{margin-bottom:8px}
+.p-kicker{font-size:12px;font-weight:600;color:var(--brand-ink);margin-bottom:3px}
+.p-title{font-family:var(--f-display);font-size:17px;line-height:1.25;font-weight:600;letter-spacing:-.005em;overflow-wrap:anywhere}
+.p-dek{font-size:13px;color:var(--ink3);margin-top:3px;line-height:1.45}
+
+/* sections inside a panel drop their own card: the panel is the card */
+.panel .fig,.panel .s-funnel,.panel .s-compare,.panel .s-timeline,.panel .s-score,.panel .s-insight,.panel .s-hero,
+.panel .tbl-wrap{background:transparent;border:0;border-radius:0;padding:0;box-shadow:none}
+.panel .fig-title,.panel .tbl-title,.panel .s-table .tbl-title{font-size:14.5px;margin-bottom:10px}
+.panel .caption{font-size:12.5px;margin-top:10px}
+.panel .legend{margin-top:10px;font-size:12.5px}
+.panel .dt{margin-top:10px}
+
+/* chart + insight: side by side in wide panels, stacked in narrow ones */
+.panel .s-chart-insight{gap:16px}
+.p-narrow .s-chart-insight,.p-narrow .s-funnel.has-side{grid-template-columns:minmax(0,1fr);gap:12px}
+.panel .ins{padding:14px 16px;border-radius:var(--r-sm)}
+.panel .ins .kicker{font-size:12px;margin-bottom:4px}
+.panel .ins .h3{font-size:16px;line-height:1.3}
+.panel .ins-body{margin-top:6px}
+.panel .ins-body p{font-size:13.5px;line-height:1.5}
+.panel .ins-body p+p{margin-top:6px}
+
+/* insight cards are tinted panels */
+.panel.p-insight-card{background:var(--brand-soft);border-color:transparent}
+.panel.p-insight-card.tone-good{background:var(--good-soft)}
+.panel.p-insight-card.tone-bad{background:var(--bad-soft)}
+.panel.p-insight-card.tone-warn{background:var(--warn-soft)}
+.panel .s-insight .h3{font-size:19px;line-height:1.28;max-width:none}
+.panel .s-insight .ins-body p{font-size:14px}
+.panel .s-insight .kicker{font-size:12px;margin-bottom:4px}
+
+/* hero number as a panel */
+.panel .s-hero{text-align:left}
+.panel .s-hero .delta{justify-content:flex-start}
+.panel .hero-value{--fs:58px;margin:4px 0 0}
+.panel .hero-label{font-size:14px;margin:8px 0 0;max-width:none}
+.panel .hero-spark{margin:12px 0 0;max-width:none}
+.panel .hero-spark .spark{height:44px}
+
+/* bar lists: a wider label column that wraps instead of cutting names */
+@media (min-width:641px){.panel .bl-row{grid-template-columns:minmax(110px,36%) minmax(0,1fr) minmax(56px,auto);gap:12px}}
+.panel .bl-label,.panel .bl-note{white-space:normal;overflow-wrap:anywhere}
+
+/* tables */
+.panel .tbl{font-size:13.5px}
+.panel .tbl th{padding:9px 12px;font-size:11.5px}
+.panel .tbl td{padding:9px 12px}
+.panel .tbl td.c-name{min-width:7em}
+.panel .tbl .spark{width:72px;height:20px}
+.panel .cell-bar{min-width:96px}
+
+/* funnel, comparison, scorecard, timeline, heatmap, callouts */
+.panel .fn-stage{padding:3px 0;grid-template-columns:minmax(120px,26%) minmax(0,1fr)}
+.panel .fn-bar{height:32px}
+.panel .fn-val{font-size:19px}
+.panel .fn-label{font-size:14px}
+.panel .s-funnel.has-side{gap:18px}
+.panel .s-funnel.has-side .ins{padding:14px 16px;background:var(--panel2)}
+.panel .cmp-head{margin-bottom:10px}
+.panel .cmp-row{padding:7px 0}
+.panel .cmp-side{font-size:15px}
+.panel .cmp-cell b{font-size:14px}
+.panel .cmp-metric{font-size:13px}
+.panel .sc{padding:9px 0}
+.panel .sc-value{font-size:18px}
+.panel .sc-label{font-size:14px}
+.panel .sc-detail{font-size:12.5px}
+.panel .tl-ev{padding:8px 0}
+.panel .heat-cell{min-height:22px}
+.panel .s-callouts{gap:12px}
+.panel .co{padding:14px 16px}
+.panel .co-value{--fs:28px}
+.panel .co-title{font-size:14.5px}
+.panel .co-body{font-size:13px}
+
+/* recommendations: compact cards side by side */
+.panel .recs{grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.panel .rec-top{padding:14px 16px 0}
+.panel .rec-body{padding:6px 16px 14px}
+.panel .rec .h3{font-size:15.5px;line-height:1.3}
+.panel .rec-body p{font-size:13.5px;line-height:1.5}
+.panel .rec-meta{margin-top:8px}
+
+/* method notes, folded */
+.d-notes{margin-top:16px;font-size:13px;color:var(--ink3)}
+.d-notes summary{cursor:pointer;width:max-content;font-weight:600;color:var(--ink2);list-style:none}
+.d-notes summary::-webkit-details-marker{display:none}
+.d-notes summary::before{content:"+ "}
+.d-notes[open] summary::before{content:"\2212 "}
+.d-notes ul{margin-top:8px;display:grid;gap:3px;max-width:120ch}
+.d-notes li{padding-left:14px;position:relative;line-height:1.5}
+.d-notes li::before{content:"\2022";position:absolute;left:0}
+.dash .rp-foot{margin-top:22px}
+
+/* ---------- responsive ---------- */
+@media (max-width:1180px){
+  .d-hero.has-next{grid-template-columns:minmax(0,1fr)}
+  .d-hero .d-next{max-width:640px}
+  .d-kpis.n5,.d-kpis.n6{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .d-grid>.span-1,.d-grid>.span-2,.d-grid>.span-3,.d-grid>.span-4,.d-grid>.span-5{grid-column:span 6}
+  .d-grid>.span-7,.d-grid>.span-8,.d-grid>.span-9,.d-grid>.span-10,.d-grid>.span-11{grid-column:span 12}
+}
+@media (max-width:860px){
+  .d-grid>.panel{grid-column:span 12}
+  .panel.p-insight-card.has-next{display:flex}
+  .d-kpis.n4{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  .rp.dash{padding:12px 14px 40px}
+  .d-h1{font-size:22px}
+  .d-dek{font-size:14.5px}
+  .d-kpis.n3,.d-kpis.n5,.d-kpis.n6{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .d-kpis.n3>.kpi:last-child,.d-kpis.n5>.kpi:last-child{grid-column:1/-1}
+  .d-kpis .kpi-value{--fs:26px}
+  .panel{padding:16px 14px 14px}
+  .d-grid{gap:12px}
+  .d-top .src-detail{display:none}
+  .panel .fn-stage{grid-template-columns:minmax(0,1fr)}
+  .panel .fn-conv,.panel .fn-note{grid-column:1}
+  .panel .s-funnel.has-side{grid-template-columns:minmax(0,1fr)}
+}

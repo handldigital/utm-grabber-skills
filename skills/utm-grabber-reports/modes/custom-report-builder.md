@@ -50,17 +50,22 @@ Make standard MCP calls scoped to the time range. Filter entries client-side on 
 
 Apply the grouping. For each group, compute the standard aggregates (count, share, top source, trend). If the user wants period comparisons, repeat the pull for the comparison window and compute deltas.
 
-### Step 4: Render
+### Step 4: Build
 
-Use the slide template shell but pick slide types à la carte based on the spec's `slides_desired`. Don't force a full 10-slide deck — 5–7 custom slides is usually right. Each slide should answer one of the dimensions in the spec.
+Assemble a summary dict from the section types in `references/report-schema.md` (title-block first, closing last; 5 to 9 sections is usually right; each section answers one dimension of the spec). Start from the closest recipe's output when one exists (`get_recipe(key)(...)`) and add, remove or filter sections rather than starting from nothing. Check it with `validate_v2.validate(summary)` (it must return `[]`), then:
 
-Save to `/mnt/user-data/outputs/custom-{subject-slug}-{YYYY-MM-DD}.html` + .pdf.
+```python
+from build_report import build_report
+build_report(summary, "/mnt/user-data/outputs/custom-{subject-slug}-{YYYY-MM-DD}.html", theme=theme)
+```
+
+Same summary builds the `.pdf` and `.pptx` when asked.
 
 ## Principles
 
 ### 1. Don't over-interpret
 
-If the user says "group by campaign", don't also group by source, medium, and week. Build exactly what they asked for, nothing more. If you think they'd benefit from another dimension, suggest it at the end — don't insert it.
+If the user says "group by campaign", don't also group by source, medium, and week. Build exactly what they asked for, nothing more. If you think they'd benefit from another dimension, suggest it at the end : don't insert it.
 
 ### 2. Confirm before running
 
@@ -68,13 +73,15 @@ Always echo the spec and ask for confirmation. This prevents 10 minutes of work 
 
 ### 3. Reuse canned report components
 
-If the user's request is 80% a canned report, start from that canned report's instructions and modify. E.g., a custom request for "campaign leaderboard but only HubSpot leads" should reuse the Top Campaign Leaderboard transformations with an added filter — not build from scratch.
+If the user's request is 80% a canned report, start from that canned report's instructions and modify. E.g., a custom request for "campaign leaderboard but only HubSpot leads" should reuse the Top Campaign Leaderboard transformations with an added filter : not build from scratch.
 
 ### 4. Tell the user what's missing
 
-If the request asks for data we don't have (ad spend, CPA, ROAS in Phase 1), say so in the confirmation step BEFORE pulling any data:
+If the request needs a source that isn't connected (ad spend, CPA, ROAS need an ad platform; sessions need analytics; close rates need a CRM), say so in the confirmation step BEFORE pulling any data:
 
-> You asked for cost-per-lead by campaign. We don't currently have ad spend data — that'll be in the Phase 2 ad platform connectors. I can build the rest of your report (leads by campaign, quality by campaign), but the cost column will be blank. Shall I proceed?
+> You asked for cost per lead by campaign. Your Google Ads isn't connected to this chat yet, so I can't see spend. Connect it and I'll add the cost column; or I can build leads and lead quality by campaign right now. Which do you prefer?
+
+When the source IS connected, pull it and join it with `scripts/connectors.py` (`references/connectors.md`).
 
 ### 5. Name the output clearly
 
@@ -82,7 +89,7 @@ The custom report filename should reflect the custom spec so the user can find i
 
 ### 6. Title pattern: italic accent on a noun, never a year or number
 
-Every slide `title` / `insight_title` / `label` wraps EXACTLY ONE word or phrase in `*asterisks*` — that becomes the italic brand-color accent. When you're building a custom title from scratch (no recipe template to copy from), the wrapped word MUST be a meaningful **noun** describing what the report is about. Never a year, date, percentage, or generic adjective.
+Every slide `title` / `insight_title` / `label` wraps EXACTLY ONE word or phrase in `*asterisks*` : that becomes the italic brand-color accent. When you're building a custom title from scratch (no recipe template to copy from), the wrapped word MUST be a meaningful **noun** describing what the report is about. Never a year, date, percentage, or generic adjective.
 
 Good (noun in accent): `"Your *attribution* picture."` · `"Your *HubSpot* leads, mapped."` · `"Q1 *winners* in paid."`
 
@@ -96,9 +103,9 @@ The custom builder can combine these building blocks:
 
 - **Filters** on any form field or UTM field
 - **Groupings** by any categorical field
-- **Time ranges** — absolute, relative, or side-by-side periods
-- **Metrics** — count, share %, avg (on numeric form fields), trend
-- **Comparisons** — period-over-period, group-vs-group, source-vs-source
+- **Time ranges** : absolute, relative, or side-by-side periods
+- **Metrics** : count, share %, avg (on numeric form fields), trend
+- **Comparisons** : period-over-period, group-vs-group, source-vs-source
 
 It CANNOT:
 - Apply machine-learning clustering (no k-means, no LDA)
@@ -122,7 +129,7 @@ If the user asks for something outside these boundaries, say so and offer the ne
 > 5. Quality comparison: Monthly Ad Spend distribution, HubSpot vs Salesforce
 > 6. Recommendations
 >
-> One caveat: I don't have cost or CPA data — we're comparing volume and form-declared spend brackets, not dollar-for-dollar CAC. Proceed?
+> One caveat: I don't have cost or CPA data : we're comparing volume and form-declared spend brackets, not dollar-for-dollar CAC. Proceed?
 
 **User:** Yes.
 
